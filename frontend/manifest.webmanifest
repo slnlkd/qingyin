@@ -1,0 +1,23 @@
+{
+  "name": "清饮 Qingyin",
+  "short_name": "清饮",
+  "description": "一个适配移动端的戒酒打卡与互相监督应用。",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#eef7f1",
+  "theme_color": "#dff3ea",
+  "icons": [
+    {
+      "src": "./assets/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

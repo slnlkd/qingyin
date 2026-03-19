@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#dff3ea" />
+    <title>清饮 Qingyin</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb bg-orb-left"></div>
+    <div class="bg-orb bg-orb-right"></div>
+    <main class="app-shell">
+      <div class="phone-frame">
+        <header class="app-header">
+          <div>
+            <p class="app-kicker">Qingyin</p>
+          </div>
+          <button id="profileShortcut" class="ghost-btn" title="个人设置">👤</button>
+        </header>
+
+        <section class="page is-active" data-page="home">
+          <div class="hero-card">
+            <div class="hero-head">
+              <div>
+                <p class="eyebrow">戒酒打卡</p>
+                <h1 id="homeGreeting">你已坚持戒酒第 1 天</h1>
+              </div>
+            </div>
+            <p class="date-text" id="todayLabel"></p>
+
+            <div class="checkin-ring">
+              <div class="ring-inner">
+                <div class="ring-mark" id="ringMark">✓</div>
+                <div class="ring-title" id="ringTitle">今天已打卡</div>
+              </div>
+            </div>
+            <p class="ring-subtitle" id="ringSubtitle">保持节奏，给明天留一点光。</p>
+          </div>
+
+          <section class="panel mood-panel">
+            <div class="section-head">
+              <h2>你今天感觉如何？</h2>
+              <span id="moodHint">选择一个状态</span>
+            </div>
+            <div class="mood-grid" id="moodGrid"></div>
+            <label class="reflection-box">
+              <span>今日感悟</span>
+              <textarea id="reflectionInput" maxlength="200" placeholder="写下你今天的感悟和鼓励..."></textarea>
+            </label>
+            <button class="primary-btn" id="checkinButton">完成今日打卡</button>
+          </section>
+
+          <section class="stats-row">
+            <article class="metric-card">
+              <span class="metric-label">坚持天数</span>
+              <strong id="soberDaysValue">1</strong>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">节省金额</span>
+              <strong id="savedAmountValue">¥0</strong>
+            </article>
+          </section>
+
+          <section class="panel calendar-panel">
+            <div class="section-head">
+              <h2>打卡月历</h2>
+              <span id="calendarMonthLabel"></span>
+            </div>
+            <div class="calendar-weekdays">
+              <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+            </div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+          </section>
+        </section>
+
+        <section class="page" data-page="stats">
+          <section class="panel tall-panel">
+            <div class="section-head">
+              <h2>统计</h2>
+              <span>把每一次坚持都看见</span>
+            </div>
+            <div class="summary-stack">
+              <article class="summary-card">
+                <span>累计签到</span>
+                <strong id="totalCheckinsValue">0</strong>
+              </article>
+              <article class="summary-card">
+                <span>当前日预算</span>
+                <strong id="dailyBudgetValue">¥0</strong>
+              </article>
+            </div>
+            <div class="trend-box">
+              <div class="trend-head">
+                <h3>最近 7 次心情波动</h3>
+                <span>用于观察戒断节奏</span>
+              </div>
+              <div class="mood-trend" id="moodTrend"></div>
+            </div>
+          </section>
+        </section>
+
+        <section class="page" data-page="challenge">
+          <section class="panel tall-panel">
+            <div class="section-head">
+              <h2>监督群组</h2>
+              <span>和信任的人一起坚持</span>
+            </div>
+            <div class="group-actions">
+              <input id="groupNameInput" class="text-input" maxlength="30" placeholder="新建群组名称，例如：清醒互助小组" />
+              <button class="secondary-btn" id="createGroupButton">创建群组</button>
+              <input id="inviteCodeInput" class="text-input" maxlength="12" placeholder="输入邀请码加入监督群组" />
+              <button class="secondary-btn" id="joinGroupButton">加入群组</button>
+            </div>
+            <div class="group-card" id="groupCard">
+              <p>你还没有加入监督群组。</p>
+            </div>
+            <div class="member-list" id="memberList"></div>
+          </section>
+        </section>
+
+        <section class="page" data-page="community">
+          <section class="panel tall-panel">
+            <div class="section-head">
+              <h2>监督动态</h2>
+              <span>群组内的每一步都能被看见</span>
+            </div>
+            <div id="feedList" class="feed-list">
+              <div class="feed-empty">加入监督群组后，这里会显示成员动态。</div>
+            </div>
+          </section>
+        </section>
+
+        <section class="page" data-page="profile">
+          <section class="panel tall-panel">
+            <div class="section-head">
+              <h2>我的</h2>
+              <span>完善资料，保持节奏</span>
+            </div>
+            <form id="profileForm" class="profile-form">
+              <label>
+                <span>昵称</span>
+                <input name="nickname" class="text-input" maxlength="20" required />
+              </label>
+              <label>
+                <span>头像 Emoji</span>
+                <input name="avatar_emoji" class="text-input" maxlength="4" required />
+              </label>
+              <label>
+                <span>戒酒起始日</span>
+                <input name="sober_start_date" class="text-input" type="date" required />
+              </label>
+              <label>
+                <span>每日饮酒预算（元）</span>
+                <input name="daily_budget" class="text-input" type="number" min="0" step="1" required />
+              </label>
+              <button class="primary-btn" type="submit">保存资料</button>
+            </form>
+          </section>
+        </section>
+
+        <nav class="bottom-nav">
+          <button class="nav-item is-active" data-target="home">首页</button>
+          <button class="nav-item" data-target="stats">统计</button>
+          <button class="nav-item" data-target="challenge">挑战</button>
+          <button class="nav-item" data-target="community">社区</button>
+          <button class="nav-item" data-target="profile">我的</button>
+        </nav>
+      </div>
+    </main>
+
+    <div id="toast" class="toast"></div>
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
