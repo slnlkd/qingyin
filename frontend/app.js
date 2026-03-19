@@ -2,7 +2,7 @@ const API_BASE =
   localStorage.getItem("qingyin_api_base") ||
   (location.hostname === "127.0.0.1" || location.hostname === "localhost"
     ? "http://127.0.0.1:8000/api"
-    : `${location.origin}/api`);
+    : `${location.origin}/qingyin-api`);
 const TOKEN_KEY = "qingyin_session_token";
 const moodMap = [
   { label: "开心", emoji: "☺️", level: 5 },

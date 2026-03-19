@@ -59,7 +59,7 @@ docker compose up -d --build
 启动后访问：
 
 ```text
-http://127.0.0.1:8080
+http://127.0.0.1:18080
 ```
 
 ### 停止
@@ -70,9 +70,11 @@ docker compose down
 
 ### 部署结构
 
-- `web`：`nginx` 提供前端静态文件，并把 `/api` 代理到后端
+- `web`：`nginx` 提供前端静态文件
 - `backend`：`FastAPI + uvicorn`
 - `backend-data/`：数据库持久化目录，容器重建后数据仍保留
+- 宿主机 `nginx` 可把 `/qingyin/` 代理到 `127.0.0.1:18080`
+- 宿主机 `nginx` 可把 `/qingyin-api/` 代理到 `127.0.0.1:18081/api/`
 
 ## 已实现接口
 
