@@ -26,6 +26,13 @@ const state = {
   feed: [],
 };
 
+class SessionExpiredError extends Error {
+  constructor() {
+    super("当前会话已失效");
+    this.name = "SessionExpiredError";
+  }
+}
+
 const el = {
   todayLabel: document.querySelector("#todayLabel"),
   homeGreeting: document.querySelector("#homeGreeting"),
@@ -136,12 +143,33 @@ async function api(path, options = {}, hasRetried = false) {
   if (response.status === 401 && state.token && !hasRetried) {
     state.token = "";
     localStorage.removeItem(TOKEN_KEY);
-    await initSession();
-    return api(path, options, true);
+    throw new SessionExpiredError();
   }
 
   if (!response.ok) throw new Error(data.detail || "请求失败");
   return data;
+}
+
+async function rebuildSessionAfterExpiry() {
+  const shouldCreate = window.confirm("当前会话已失效。是否创建新的本地会话？注意：新会话不会自动恢复原来的监督关系。");
+  if (!shouldCreate) {
+    throw new SessionExpiredError();
+  }
+  await initSession();
+  await refreshAll();
+  showToast("已创建新的本地会话");
+}
+
+async function handleActionError(error) {
+  if (error instanceof SessionExpiredError) {
+    try {
+      await rebuildSessionAfterExpiry();
+    } catch (sessionError) {
+      showToast(sessionError.message);
+    }
+    return;
+  }
+  showToast(error.message);
 }
 
 function renderMoodOptions() {
@@ -416,7 +444,7 @@ async function submitCheckin() {
     showToast("今日打卡已完成");
     await refreshAll();
   } catch (error) {
-    showToast(error.message);
+    await handleActionError(error);
   }
 }
 
@@ -432,7 +460,7 @@ async function saveProfile(event) {
     showToast("资料已保存");
     await refreshAll();
   } catch (error) {
-    showToast(error.message);
+    await handleActionError(error);
   }
 }
 
@@ -449,7 +477,7 @@ async function createGroup() {
     await refreshAll();
     switchPage("challenge");
   } catch (error) {
-    showToast(error.message);
+    await handleActionError(error);
   }
 }
 
@@ -466,7 +494,7 @@ async function joinGroup() {
     await refreshAll();
     switchPage("challenge");
   } catch (error) {
-    showToast(error.message);
+    await handleActionError(error);
   }
 }
 
@@ -520,13 +548,22 @@ function registerEvents() {
 async function boot() {
   renderMoodOptions();
   registerEvents();
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  }
   try {
     await refreshAll();
   } catch (error) {
+    if (error instanceof SessionExpiredError) {
+      showToast("原会话已失效，请确认是否重建本地会话");
+      try {
+        await rebuildSessionAfterExpiry();
+      } catch (sessionError) {
+        showToast(sessionError.message);
+      }
+      return;
+    }
     showToast(`初始化失败：${error.message}`);
-  }
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
   }
 }
 
@@ -537,7 +574,7 @@ async function changeCalendarMonth(offset) {
     state.calendar = calendar.days;
     renderCalendar();
   } catch (error) {
-    showToast(error.message);
+    await handleActionError(error);
   }
 }
 
