@@ -95,6 +95,26 @@ function showToast(message) {
   showToast.timer = setTimeout(() => el.toast.classList.remove("is-visible"), 2200);
 }
 
+function formatFeedTime(value) {
+  if (!value) return "";
+  let normalized = value;
+  if (!/[zZ]|[+-]\d{2}:\d{2}$/.test(normalized)) {
+    normalized = `${normalized}Z`;
+  }
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) {
+    return value.replace("T", " ");
+  }
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Shanghai",
+  }).format(parsed);
+}
+
 function moodIcon(name) {
   const icons = {
     happy: `
@@ -136,7 +156,7 @@ async function api(path, options = {}, hasRetried = false) {
   if (state.token) headers.set("X-Session-Token", state.token);
   if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 
-  const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const response = await fetch(`${API_BASE}${path}`, { ...options, headers, cache: "no-store" });
   if (response.status === 204) return null;
   const data = await response.json();
 
@@ -368,7 +388,7 @@ function renderFeed() {
           <div class="feed-top">
             <div>
               <div class="feed-name">${item.avatar_emoji} ${item.nickname}</div>
-              <div class="feed-meta">${item.created_at.replace("T", " ")}</div>
+              <div class="feed-meta">${formatFeedTime(item.created_at)}</div>
             </div>
             <div class="feed-meta">${item.event_type}</div>
           </div>
@@ -549,7 +569,16 @@ async function boot() {
   renderMoodOptions();
   registerEvents();
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
+    navigator.serviceWorker
+      .getRegistrations()
+      .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+      .then(() => {
+        if ("caches" in window) {
+          return caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))));
+        }
+        return null;
+      })
+      .catch(() => {});
   }
   try {
     await refreshAll();

@@ -5,7 +5,7 @@ import os
 import secrets
 import sqlite3
 from contextlib import contextmanager
-from datetime import date, datetime
+from datetime import UTC, date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 BASE_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = Path(os.getenv("QINGYIN_DB_PATH", str(BASE_DIR / "qingyin.db")))
 MOODS = ["开心", "平静", "一般", "渴望", "不适"]
+APP_TZ = timezone(timedelta(hours=8))
 
 
 app = FastAPI(title="Qingyin API", version="0.1.0")
@@ -66,7 +67,7 @@ def get_db() -> sqlite3.Connection:
 
 
 def now_iso() -> str:
-    return datetime.now().isoformat(timespec="seconds")
+    return datetime.now(APP_TZ).isoformat(timespec="seconds")
 
 
 def init_db() -> None:
