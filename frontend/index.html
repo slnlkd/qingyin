@@ -5,172 +5,267 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#dff3ea" />
     <title>清饮 Qingyin</title>
-    <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="icon" href="./assets/favicon.svg?v=20260320j" type="image/svg+xml" />
+    <link rel="manifest" href="./manifest.webmanifest?v=20260320j" />
+    <link rel="stylesheet" href="./styles.css?v=20260320j" />
   </head>
   <body>
-    <div class="bg-orb bg-orb-left"></div>
-    <div class="bg-orb bg-orb-right"></div>
+    <div class="scene-leaf scene-leaf-left"></div>
+    <div class="scene-leaf scene-leaf-right"></div>
     <main class="app-shell">
       <div class="phone-frame">
         <header class="app-header">
-          <div>
-            <p class="app-kicker">Qingyin</p>
+          <div class="header-spacer" aria-hidden="true"></div>
+          <div class="header-title-block">
+            <p class="header-title">戒酒打卡</p>
           </div>
-          <button id="profileShortcut" class="ghost-btn" title="个人设置">👤</button>
+          <button id="profileShortcut" class="icon-btn" title="个人设置" aria-label="个人设置">
+            <svg class="ui-icon ui-icon-profile" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="8" r="4.2"></circle>
+              <path d="M4.8 19.2c1.6-3.5 4.1-5.2 7.2-5.2 3.1 0 5.6 1.7 7.2 5.2"></path>
+            </svg>
+          </button>
         </header>
 
-        <section class="page is-active" data-page="home">
-          <div class="hero-card">
-            <div class="hero-head">
-              <div>
-                <p class="eyebrow">戒酒打卡</p>
-                <h1 id="homeGreeting">你已坚持戒酒第 1 天</h1>
+        <div class="content-scroll">
+          <section class="page is-active" data-page="home">
+            <section class="hero-card">
+              <p class="hero-subtitle" id="homeGreeting">你已坚持戒酒第 1 天</p>
+              <div class="hero-days" id="soberDaysHero">1</div>
+              <p class="hero-date" id="todayLabel"></p>
+              <div class="checkin-ring">
+                <div class="ring-inner">
+                  <div class="ring-mark" id="ringMark">✓</div>
+                  <div class="ring-title" id="ringTitle">今日已打卡</div>
+                </div>
               </div>
-            </div>
-            <p class="date-text" id="todayLabel"></p>
+              <p class="ring-caption" id="ringSubtitle">今天也在向更清醒的自己靠近。</p>
+            </section>
 
-            <div class="checkin-ring">
-              <div class="ring-inner">
-                <div class="ring-mark" id="ringMark">✓</div>
-                <div class="ring-title" id="ringTitle">今天已打卡</div>
+            <section class="supervision-strip" id="homeSupervisionPanel"></section>
+
+            <section class="mood-card">
+              <div class="block-title">
+                <h2>你今天感觉如何？</h2>
               </div>
-            </div>
-            <p class="ring-subtitle" id="ringSubtitle">保持节奏，给明天留一点光。</p>
-          </div>
+              <div class="mood-grid" id="moodGrid"></div>
+              <div class="reflection-wrap">
+                <label class="field-label" for="reflectionInput">今日感悟</label>
+                <textarea id="reflectionInput" maxlength="200" placeholder="写下你今天的感悟和鼓励..."></textarea>
+              </div>
+              <button class="primary-btn" id="checkinButton">完成今日打卡</button>
+            </section>
 
-          <section class="panel mood-panel">
-            <div class="section-head">
-              <h2>你今天感觉如何？</h2>
-              <span id="moodHint">选择一个状态</span>
-            </div>
-            <div class="mood-grid" id="moodGrid"></div>
-            <label class="reflection-box">
-              <span>今日感悟</span>
-              <textarea id="reflectionInput" maxlength="200" placeholder="写下你今天的感悟和鼓励..."></textarea>
-            </label>
-            <button class="primary-btn" id="checkinButton">完成今日打卡</button>
-          </section>
-
-          <section class="stats-row">
-            <article class="metric-card">
-              <span class="metric-label">坚持天数</span>
-              <strong id="soberDaysValue">1</strong>
-            </article>
-            <article class="metric-card">
-              <span class="metric-label">节省金额</span>
-              <strong id="savedAmountValue">¥0</strong>
-            </article>
-          </section>
-
-          <section class="panel calendar-panel">
-            <div class="section-head">
-              <h2>打卡月历</h2>
-              <span id="calendarMonthLabel"></span>
-            </div>
-            <div class="calendar-weekdays">
-              <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
-            </div>
-            <div class="calendar-grid" id="calendarGrid"></div>
-          </section>
-        </section>
-
-        <section class="page" data-page="stats">
-          <section class="panel tall-panel">
-            <div class="section-head">
-              <h2>统计</h2>
-              <span>把每一次坚持都看见</span>
-            </div>
-            <div class="summary-stack">
-              <article class="summary-card">
-                <span>累计签到</span>
-                <strong id="totalCheckinsValue">0</strong>
+            <section class="stats-row">
+              <article class="metric-card">
+                <div class="metric-icon" aria-hidden="true">
+                  <svg class="ui-icon ui-icon-calendar" viewBox="0 0 24 24">
+                    <rect x="4" y="6" width="16" height="14" rx="3"></rect>
+                    <path d="M8 4v4M16 4v4M4 10h16"></path>
+                  </svg>
+                </div>
+                <div class="metric-body">
+                  <span class="metric-label">坚持天数</span>
+                  <strong id="soberDaysValue">1</strong>
+                </div>
               </article>
-              <article class="summary-card">
-                <span>当前日预算</span>
-                <strong id="dailyBudgetValue">¥0</strong>
+              <article class="metric-card">
+                <div class="metric-icon" aria-hidden="true">
+                  <svg class="ui-icon ui-icon-wallet" viewBox="0 0 24 24">
+                    <path d="M5 7.5h12.5a2.5 2.5 0 0 1 2.5 2.5v7a2.5 2.5 0 0 1-2.5 2.5H5A2.5 2.5 0 0 1 2.5 17V10A2.5 2.5 0 0 1 5 7.5Z"></path>
+                    <path d="M5 7.5V6.6A2.1 2.1 0 0 1 7.1 4.5H18"></path>
+                    <circle cx="16.8" cy="13.4" r="1.2"></circle>
+                  </svg>
+                </div>
+                <div class="metric-body">
+                  <span class="metric-label">节省金额</span>
+                  <strong id="savedAmountValue">¥0</strong>
+                </div>
               </article>
-            </div>
-            <div class="trend-box">
-              <div class="trend-head">
-                <h3>最近 7 次心情波动</h3>
-                <span>用于观察戒断节奏</span>
+            </section>
+
+          </section>
+
+          <section class="page" data-page="stats">
+            <section class="panel tall-panel stats-panel">
+              <div class="section-head stats-head">
+                <h2>统计</h2>
+                <span>把每一次坚持都看见</span>
               </div>
-              <div class="mood-trend" id="moodTrend"></div>
-            </div>
+              <div class="summary-stack stats-summary-stack">
+                <article class="summary-card stats-summary-card">
+                  <div class="stats-summary-top">
+                    <span>累计签到</span>
+                    <div class="stats-summary-icon" aria-hidden="true">
+                      <svg class="ui-icon ui-icon-calendar" viewBox="0 0 24 24">
+                        <rect x="4" y="6" width="16" height="14" rx="3"></rect>
+                        <path d="M8 4v4M16 4v4M4 10h16"></path>
+                      </svg>
+                    </div>
+                  </div>
+                  <strong id="totalCheckinsValue">0</strong>
+                </article>
+                <article class="summary-card stats-summary-card">
+                  <div class="stats-summary-top">
+                    <span>当前日预算</span>
+                    <div class="stats-summary-icon" aria-hidden="true">
+                      <svg class="ui-icon ui-icon-wallet" viewBox="0 0 24 24">
+                        <path d="M5 7.5h12.5a2.5 2.5 0 0 1 2.5 2.5v7a2.5 2.5 0 0 1-2.5 2.5H5A2.5 2.5 0 0 1 2.5 17V10A2.5 2.5 0 0 1 5 7.5Z"></path>
+                        <path d="M5 7.5V6.6A2.1 2.1 0 0 1 7.1 4.5H18"></path>
+                        <circle cx="16.8" cy="13.4" r="1.2"></circle>
+                      </svg>
+                    </div>
+                  </div>
+                  <strong id="dailyBudgetValue">¥0</strong>
+                </article>
+              </div>
+              <div class="trend-box stats-trend-box">
+                <div class="trend-head">
+                  <h3>最近 7 次心情波动</h3>
+                  <span>用于观察戒断节奏</span>
+                </div>
+                <div class="mood-trend" id="moodTrend"></div>
+              </div>
+              <section class="calendar-card stats-calendar-card">
+                <div class="calendar-head">
+                  <h2>打卡月历</h2>
+                  <div class="calendar-nav">
+                    <button class="calendar-switch" id="calendarPrev" type="button" aria-label="上个月">
+                      <svg class="ui-icon ui-icon-arrow" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M14.5 5.5 8 12l6.5 6.5"></path>
+                      </svg>
+                    </button>
+                    <span id="calendarMonthLabel"></span>
+                    <button class="calendar-switch" id="calendarNext" type="button" aria-label="下个月">
+                      <svg class="ui-icon ui-icon-arrow" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M9.5 5.5 16 12l-6.5 6.5"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="calendar-weekdays">
+                  <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+                </div>
+                <div class="calendar-grid" id="calendarGrid"></div>
+              </section>
+            </section>
           </section>
-        </section>
 
-        <section class="page" data-page="challenge">
-          <section class="panel tall-panel">
-            <div class="section-head">
-              <h2>监督群组</h2>
-              <span>和信任的人一起坚持</span>
-            </div>
-            <div class="group-actions">
-              <input id="groupNameInput" class="text-input" maxlength="30" placeholder="新建群组名称，例如：清醒互助小组" />
-              <button class="secondary-btn" id="createGroupButton">创建群组</button>
-              <input id="inviteCodeInput" class="text-input" maxlength="12" placeholder="输入邀请码加入监督群组" />
-              <button class="secondary-btn" id="joinGroupButton">加入群组</button>
-            </div>
-            <div class="group-card" id="groupCard">
-              <p>你还没有加入监督群组。</p>
-            </div>
-            <div class="member-list" id="memberList"></div>
+          <section class="page" data-page="challenge">
+            <section class="panel tall-panel">
+              <div class="section-head">
+                <h2>监督群组</h2>
+                <span>和信任的人一起坚持</span>
+              </div>
+              <div class="group-actions">
+                <input id="groupNameInput" class="text-input" maxlength="30" placeholder="新建群组名称，例如：清醒互助小组" />
+                <button class="secondary-btn" id="createGroupButton">创建群组</button>
+                <input id="inviteCodeInput" class="text-input" maxlength="12" placeholder="输入邀请码加入监督群组" />
+                <button class="secondary-btn" id="joinGroupButton">加入群组</button>
+              </div>
+              <div class="group-card" id="groupCard">
+                <p>你还没有加入监督群组。</p>
+              </div>
+              <div class="member-list" id="memberList"></div>
+            </section>
           </section>
-        </section>
 
-        <section class="page" data-page="community">
-          <section class="panel tall-panel">
-            <div class="section-head">
-              <h2>监督动态</h2>
-              <span>群组内的每一步都能被看见</span>
-            </div>
-            <div id="feedList" class="feed-list">
-              <div class="feed-empty">加入监督群组后，这里会显示成员动态。</div>
-            </div>
+          <section class="page" data-page="community">
+            <section class="panel tall-panel">
+              <div class="section-head">
+                <h2>监督动态</h2>
+                <span>群组内的每一步都能被看见</span>
+              </div>
+              <div id="feedList" class="feed-list">
+                <div class="feed-empty">加入监督群组后，这里会显示成员动态。</div>
+              </div>
+            </section>
           </section>
-        </section>
 
-        <section class="page" data-page="profile">
-          <section class="panel tall-panel">
-            <div class="section-head">
-              <h2>我的</h2>
-              <span>完善资料，保持节奏</span>
-            </div>
-            <form id="profileForm" class="profile-form">
-              <label>
-                <span>昵称</span>
-                <input name="nickname" class="text-input" maxlength="20" required />
-              </label>
-              <label>
-                <span>头像 Emoji</span>
-                <input name="avatar_emoji" class="text-input" maxlength="4" required />
-              </label>
-              <label>
-                <span>戒酒起始日</span>
-                <input name="sober_start_date" class="text-input" type="date" required />
-              </label>
-              <label>
-                <span>每日饮酒预算（元）</span>
-                <input name="daily_budget" class="text-input" type="number" min="0" step="1" required />
-              </label>
-              <button class="primary-btn" type="submit">保存资料</button>
-            </form>
+          <section class="page" data-page="profile">
+            <section class="panel tall-panel">
+              <div class="section-head">
+                <h2>我的</h2>
+                <span>完善资料，保持节奏</span>
+              </div>
+              <form id="profileForm" class="profile-form">
+                <label>
+                  <span>昵称</span>
+                  <input name="nickname" class="text-input" maxlength="20" required />
+                </label>
+                <label>
+                  <span>头像 Emoji</span>
+                  <input name="avatar_emoji" class="text-input" maxlength="4" required />
+                </label>
+                <label>
+                  <span>戒酒起始日</span>
+                  <input name="sober_start_date" class="text-input" type="date" required />
+                </label>
+                <label>
+                  <span>每日饮酒预算（元）</span>
+                  <input name="daily_budget" class="text-input" type="number" min="0" step="1" required />
+                </label>
+                <button class="primary-btn" type="submit">保存资料</button>
+              </form>
+            </section>
           </section>
-        </section>
+        </div>
 
         <nav class="bottom-nav">
-          <button class="nav-item is-active" data-target="home">首页</button>
-          <button class="nav-item" data-target="stats">统计</button>
-          <button class="nav-item" data-target="challenge">挑战</button>
-          <button class="nav-item" data-target="community">社区</button>
-          <button class="nav-item" data-target="profile">我的</button>
+          <button class="nav-item is-active" data-target="home">
+            <span class="nav-icon" aria-hidden="true">
+              <svg class="ui-icon ui-icon-home" viewBox="0 0 24 24">
+                <path d="M4 11.2 12 4l8 7.2"></path>
+                <path d="M6.2 10.8V20h11.6v-9.2"></path>
+              </svg>
+            </span>
+            <span class="nav-label">首页</span>
+          </button>
+          <button class="nav-item" data-target="stats">
+            <span class="nav-icon" aria-hidden="true">
+              <svg class="ui-icon ui-icon-stats" viewBox="0 0 24 24">
+                <path d="M5 18V11"></path>
+                <path d="M12 18V6"></path>
+                <path d="M19 18v-8"></path>
+              </svg>
+            </span>
+            <span class="nav-label">统计</span>
+          </button>
+          <button class="nav-item" data-target="challenge">
+            <span class="nav-icon" aria-hidden="true">
+              <svg class="ui-icon ui-icon-challenge" viewBox="0 0 24 24">
+                <path d="M7.2 5h9.6"></path>
+                <path d="M9 5v2.4a3 3 0 0 1-2 2.8l-1.8.7 2.5 2.8A5.1 5.1 0 0 0 12 15.4a5.1 5.1 0 0 0 4.3-1.8l2.5-2.8-1.8-.7a3 3 0 0 1-2-2.8V5"></path>
+                <path d="M9 19h6"></path>
+              </svg>
+            </span>
+            <span class="nav-label">挑战</span>
+          </button>
+          <button class="nav-item" data-target="community">
+            <span class="nav-icon" aria-hidden="true">
+              <svg class="ui-icon ui-icon-community" viewBox="0 0 24 24">
+                <circle cx="9" cy="9" r="3"></circle>
+                <circle cx="16.8" cy="10.2" r="2.6"></circle>
+                <path d="M4.5 18.5c1-2.8 2.8-4.2 5.4-4.2 2.6 0 4.4 1.4 5.4 4.2"></path>
+                <path d="M14.6 17.8c.6-1.8 1.8-2.9 3.7-3.3"></path>
+              </svg>
+            </span>
+            <span class="nav-label">社区</span>
+          </button>
+          <button class="nav-item" data-target="profile">
+            <span class="nav-icon" aria-hidden="true">
+              <svg class="ui-icon ui-icon-profile" viewBox="0 0 24 24">
+                <circle cx="12" cy="8" r="4.2"></circle>
+                <path d="M4.8 19.2c1.6-3.5 4.1-5.2 7.2-5.2 3.1 0 5.6 1.7 7.2 5.2"></path>
+              </svg>
+            </span>
+            <span class="nav-label">我的</span>
+          </button>
         </nav>
       </div>
     </main>
 
     <div id="toast" class="toast"></div>
-    <script src="./app.js" type="module"></script>
+    <script src="./app.js?v=20260320j" type="module"></script>
   </body>
 </html>

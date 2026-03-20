@@ -3,13 +3,14 @@ const API_BASE =
   (location.hostname === "127.0.0.1" || location.hostname === "localhost"
     ? "http://127.0.0.1:8000/api"
     : `${location.origin}/qingyin-api`);
+
 const TOKEN_KEY = "qingyin_session_token";
 const moodMap = [
-  { label: "开心", emoji: "☺️", level: 5 },
-  { label: "平静", emoji: "😌", level: 4 },
-  { label: "一般", emoji: "😐", level: 3 },
-  { label: "渴望", emoji: "😣", level: 2 },
-  { label: "不适", emoji: "😵", level: 1 },
+  { label: "开心", level: 5, icon: "happy" },
+  { label: "平静", level: 4, icon: "neutral" },
+  { label: "一般", level: 3, icon: "plain" },
+  { label: "渴望", level: 2, icon: "craving" },
+  { label: "不适", level: 1, icon: "unwell" },
 ];
 
 const state = {
@@ -18,6 +19,7 @@ const state = {
   today: null,
   summary: null,
   calendar: [],
+  calendarMonth: monthKey(),
   selectedMood: "开心",
   group: null,
   members: [],
@@ -27,11 +29,12 @@ const state = {
 const el = {
   todayLabel: document.querySelector("#todayLabel"),
   homeGreeting: document.querySelector("#homeGreeting"),
+  soberDaysHero: document.querySelector("#soberDaysHero"),
   ringTitle: document.querySelector("#ringTitle"),
   ringMark: document.querySelector("#ringMark"),
   ringSubtitle: document.querySelector("#ringSubtitle"),
+  homeSupervisionPanel: document.querySelector("#homeSupervisionPanel"),
   moodGrid: document.querySelector("#moodGrid"),
-  moodHint: document.querySelector("#moodHint"),
   reflectionInput: document.querySelector("#reflectionInput"),
   checkinButton: document.querySelector("#checkinButton"),
   soberDaysValue: document.querySelector("#soberDaysValue"),
@@ -40,6 +43,8 @@ const el = {
   dailyBudgetValue: document.querySelector("#dailyBudgetValue"),
   calendarMonthLabel: document.querySelector("#calendarMonthLabel"),
   calendarGrid: document.querySelector("#calendarGrid"),
+  calendarPrev: document.querySelector("#calendarPrev"),
+  calendarNext: document.querySelector("#calendarNext"),
   moodTrend: document.querySelector("#moodTrend"),
   groupNameInput: document.querySelector("#groupNameInput"),
   inviteCodeInput: document.querySelector("#inviteCodeInput"),
@@ -60,15 +65,20 @@ function formatMoney(value) {
 function formatDateLabel() {
   return new Intl.DateTimeFormat("zh-CN", {
     year: "numeric",
-    month: "long",
+    month: "numeric",
     day: "numeric",
     weekday: "long",
   }).format(new Date());
 }
 
-function monthKey() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+function monthKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function shiftMonth(key, offset) {
+  const [year, month] = key.split("-").map(Number);
+  const date = new Date(year, month - 1 + offset, 1);
+  return monthKey(date);
 }
 
 function showToast(message) {
@@ -78,30 +88,73 @@ function showToast(message) {
   showToast.timer = setTimeout(() => el.toast.classList.remove("is-visible"), 2200);
 }
 
+function moodIcon(name) {
+  const icons = {
+    happy: `
+      <svg class="ui-icon mood-chip-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M8.5 10h.01M15.5 10h.01"></path>
+        <path d="M8 14.2c1 .9 2.3 1.3 4 1.3 1.7 0 3-.4 4-1.3"></path>
+      </svg>`,
+    neutral: `
+      <svg class="ui-icon mood-chip-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M8.5 10h.01M15.5 10h.01"></path>
+        <path d="M8.5 15h7"></path>
+      </svg>`,
+    plain: `
+      <svg class="ui-icon mood-chip-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M8.5 10h.01M15.5 10h.01"></path>
+        <path d="M9 15c1-.3 2-.5 3-.5s2 .2 3 .5"></path>
+      </svg>`,
+    craving: `
+      <svg class="ui-icon mood-chip-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M8.5 10h.01M15.5 10h.01"></path>
+        <path d="M8.5 16c1.1-1 2.3-1.5 3.5-1.5s2.4.5 3.5 1.5"></path>
+      </svg>`,
+    unwell: `
+      <svg class="ui-icon mood-chip-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M8.2 10.2 9 11M15.8 10.2 15 11"></path>
+        <path d="M8.5 16c1.1-1.2 2.2-1.8 3.5-1.8 1.3 0 2.4.6 3.5 1.8"></path>
+      </svg>`,
+  };
+  return icons[name] || icons.plain;
+}
+
 async function api(path, options = {}, hasRetried = false) {
   const headers = new Headers(options.headers || {});
   if (state.token) headers.set("X-Session-Token", state.token);
   if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+
   const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
   if (response.status === 204) return null;
   const data = await response.json();
+
   if (response.status === 401 && state.token && !hasRetried) {
     state.token = "";
     localStorage.removeItem(TOKEN_KEY);
     await initSession();
     return api(path, options, true);
   }
+
   if (!response.ok) throw new Error(data.detail || "请求失败");
   return data;
 }
 
 function renderMoodOptions() {
-  el.moodGrid.innerHTML = moodMap.map((item) => `
-    <button class="mood-chip ${state.selectedMood === item.label ? "is-active" : ""}" data-mood="${item.label}">
-      <span>${item.emoji}</span>
-      <strong>${item.label}</strong>
-    </button>
-  `).join("");
+  el.moodGrid.innerHTML = moodMap
+    .map(
+      (item) => `
+        <button class="mood-chip ${state.selectedMood === item.label ? "is-active" : ""}" data-mood="${item.label}">
+          ${moodIcon(item.icon)}
+          <strong>${item.label}</strong>
+        </button>
+      `,
+    )
+    .join("");
 }
 
 function renderHome() {
@@ -109,27 +162,101 @@ function renderHome() {
   const checkedIn = state.today?.checked_in;
   el.todayLabel.textContent = formatDateLabel();
   el.homeGreeting.textContent = `你已坚持戒酒第 ${soberDays} 天`;
+  el.soberDaysHero.textContent = soberDays;
   el.soberDaysValue.textContent = soberDays;
   el.savedAmountValue.textContent = formatMoney(state.summary?.saved_amount ?? 0);
   el.totalCheckinsValue.textContent = state.summary?.total_checkins ?? 0;
   el.dailyBudgetValue.textContent = formatMoney(state.summary?.daily_budget ?? 0);
-  el.ringTitle.textContent = checkedIn ? "今天已打卡" : "等待你点亮今天";
+  el.ringTitle.textContent = checkedIn ? "今日已打卡" : "等待打卡";
   el.ringMark.textContent = checkedIn ? "✓" : "○";
-  el.ringSubtitle.textContent = checkedIn ? "很好，今天你又为自己守住了一天。" : "现在签到，给今天一个明确的承诺。";
+  el.ringSubtitle.textContent = checkedIn
+    ? "很好，今天你又为自己守住了一天。"
+    : "现在签到，给今天一个明确的承诺。";
   el.checkinButton.disabled = checkedIn;
   el.checkinButton.textContent = checkedIn ? "今天已经完成打卡" : "完成今日打卡";
 }
 
+function pendingCount(members) {
+  return members.filter((member) => !member.checked_in_today).length;
+}
+
+function doneCount(members) {
+  return members.filter((member) => member.checked_in_today).length;
+}
+
+function renderHomeSupervision() {
+  if (!state.group) {
+    el.homeSupervisionPanel.innerHTML = `
+      <article class="supervision-empty">
+        <div class="supervision-empty-title">监督功能已就位</div>
+        <div class="supervision-empty-note">创建群组或输入邀请码加入后，这里会显示今天谁还没打卡。</div>
+        <div class="supervision-empty-actions">
+          <button class="secondary-btn" type="button" data-home-action="create-group">创建群组</button>
+          <button class="secondary-btn" type="button" data-home-action="join-group">加入群组</button>
+        </div>
+      </article>
+    `;
+    return;
+  }
+
+  const members = [...(state.members || [])].sort((a, b) => {
+    if (a.checked_in_today === b.checked_in_today) return a.sober_days - b.sober_days;
+    return a.checked_in_today ? 1 : -1;
+  });
+  const pending = pendingCount(members);
+  const done = doneCount(members);
+  const focusMembers = members.slice(0, 2);
+
+  el.homeSupervisionPanel.innerHTML = `
+    <div class="supervision-strip-body">
+      <div class="supervision-main">
+        <div>
+          <div class="supervision-label">今日监督</div>
+          <div class="supervision-title">${pending > 0 ? `还有 ${pending} 人未打卡` : "今天群组全部已打卡"}</div>
+        </div>
+        <button class="supervision-go" type="button" data-home-action="open-challenge">去监督</button>
+      </div>
+      <div class="supervision-members">
+        ${focusMembers
+          .map(
+            (member) => `
+              <article class="supervision-member-chip ${member.checked_in_today ? "" : "is-pending"}" data-home-action="open-challenge">
+                <div class="member-chip-main">
+                  ${member.checked_in_today ? "" : '<span class="member-alert-dot"></span>'}
+                  <div>
+                    <div class="member-chip-name">${member.avatar_emoji} ${member.nickname}</div>
+                    <div class="member-chip-meta">已坚持 ${member.sober_days} 天</div>
+                  </div>
+                </div>
+                <div class="member-chip-status ${member.checked_in_today ? "" : "pending"}">
+                  ${member.checked_in_today ? "已打卡" : "待打卡"}
+                </div>
+              </article>
+            `,
+          )
+          .join("")}
+      </div>
+      <button class="supervision-copy" type="button" data-copy-invite="${state.group.invite_code}">
+        邀请码 ${state.group.invite_code} · ${done}/${members.length} 已完成
+      </button>
+    </div>
+  `;
+}
+
 function renderCalendar() {
-  const [year, month] = monthKey().split("-").map(Number);
+  const [year, month] = state.calendarMonth.split("-").map(Number);
   const hitDays = new Set((state.calendar || []).map((item) => Number(item.checkin_date.slice(-2))));
   const firstDay = new Date(year, month - 1, 1).getDay();
   const dayCount = new Date(year, month, 0).getDate();
   const cells = [];
-  for (let i = 0; i < firstDay; i += 1) cells.push('<div class="calendar-day is-empty"></div>');
+
+  for (let i = 0; i < firstDay; i += 1) {
+    cells.push('<div class="calendar-day is-empty"></div>');
+  }
   for (let day = 1; day <= dayCount; day += 1) {
     cells.push(`<div class="calendar-day ${hitDays.has(day) ? "is-hit" : ""}">${day}</div>`);
   }
+
   el.calendarMonthLabel.textContent = `${year}年${month}月`;
   el.calendarGrid.innerHTML = cells.join("");
 }
@@ -140,17 +267,21 @@ function renderTrend() {
     el.moodTrend.innerHTML = '<div class="feed-empty">完成几次打卡后，这里会显示你的心情走势。</div>';
     return;
   }
-  el.moodTrend.innerHTML = recent.map((item) => {
-    const mood = moodMap.find((entry) => entry.label === item.mood) || moodMap[2];
-    const height = 36 + mood.level * 20;
-    return `
-      <div class="trend-col">
-        <div class="trend-bar" style="height:${height}px"></div>
-        <div>${mood.emoji}</div>
-        <div class="trend-label">${item.checkin_date.slice(5)}</div>
-      </div>
-    `;
-  }).join("");
+
+  el.moodTrend.innerHTML = recent
+    .map((item) => {
+      const mood = moodMap.find((entry) => entry.label === item.mood) || moodMap[2];
+      const height = 34 + mood.level * 16;
+      return `
+        <div class="trend-col">
+          <div class="trend-bar" style="height:${height}px"></div>
+          <div>${moodIcon(mood.icon)}</div>
+          <div class="trend-value">${item.mood}</div>
+          <div class="trend-label">${item.checkin_date.slice(5)}</div>
+        </div>
+      `;
+    })
+    .join("");
 }
 
 function renderGroup() {
@@ -159,6 +290,7 @@ function renderGroup() {
     el.memberList.innerHTML = "";
     return;
   }
+
   el.groupCard.innerHTML = `
     <div class="member-card-top">
       <div>
@@ -168,19 +300,24 @@ function renderGroup() {
       <div class="member-meta">监督中</div>
     </div>
   `;
-  el.memberList.innerHTML = state.members.map((member) => `
-    <article class="member-card">
-      <div class="member-card-top">
-        <div>
-          <div class="member-name">${member.avatar_emoji} ${member.nickname}</div>
-          <div class="member-meta">${member.role === "owner" ? "群主" : "成员"} · 已坚持 ${member.sober_days} 天</div>
-        </div>
-        <div class="member-meta">${member.checked_in_today ? "今日已打卡" : "今日待打卡"}</div>
-      </div>
-      <p>最近状态：${member.latest_mood || "尚未打卡"} ${member.latest_reflection ? `· ${member.latest_reflection}` : ""}</p>
-      <p>累计节省：${formatMoney(member.saved_amount)}</p>
-    </article>
-  `).join("");
+
+  el.memberList.innerHTML = state.members
+    .map(
+      (member) => `
+        <article class="member-card">
+          <div class="member-card-top">
+            <div>
+              <div class="member-name">${member.avatar_emoji} ${member.nickname}</div>
+              <div class="member-meta">${member.role === "owner" ? "群主" : "成员"} · 已坚持 ${member.sober_days} 天</div>
+            </div>
+            <div class="member-meta">${member.checked_in_today ? "今日已打卡" : "今日待打卡"}</div>
+          </div>
+          <p>最近状态：${member.latest_mood || "尚未打卡"} ${member.latest_reflection ? `· ${member.latest_reflection}` : ""}</p>
+          <p>累计节省：${formatMoney(member.saved_amount)}</p>
+        </article>
+      `,
+    )
+    .join("");
 }
 
 function formatFeedItem(item) {
@@ -195,18 +332,23 @@ function renderFeed() {
     el.feedList.innerHTML = '<div class="feed-empty">加入监督群组后，这里会显示成员动态。</div>';
     return;
   }
-  el.feedList.innerHTML = state.feed.map((item) => `
-    <article class="feed-item">
-      <div class="feed-top">
-        <div>
-          <div class="feed-name">${item.avatar_emoji} ${item.nickname}</div>
-          <div class="feed-meta">${item.created_at.replace("T", " ")}</div>
-        </div>
-        <div class="feed-meta">${item.event_type}</div>
-      </div>
-      <div class="feed-body">${formatFeedItem(item)}</div>
-    </article>
-  `).join("");
+
+  el.feedList.innerHTML = state.feed
+    .map(
+      (item) => `
+        <article class="feed-item">
+          <div class="feed-top">
+            <div>
+              <div class="feed-name">${item.avatar_emoji} ${item.nickname}</div>
+              <div class="feed-meta">${item.created_at.replace("T", " ")}</div>
+            </div>
+            <div class="feed-meta">${item.event_type}</div>
+          </div>
+          <div class="feed-body">${formatFeedItem(item)}</div>
+        </article>
+      `,
+    )
+    .join("");
 }
 
 function fillProfileForm() {
@@ -218,8 +360,12 @@ function fillProfileForm() {
 }
 
 function switchPage(target) {
-  document.querySelectorAll(".page").forEach((page) => page.classList.toggle("is-active", page.dataset.page === target));
-  document.querySelectorAll(".nav-item").forEach((nav) => nav.classList.toggle("is-active", nav.dataset.target === target));
+  document.querySelectorAll(".page").forEach((page) => {
+    page.classList.toggle("is-active", page.dataset.page === target);
+  });
+  document.querySelectorAll(".nav-item").forEach((nav) => {
+    nav.classList.toggle("is-active", nav.dataset.target === target);
+  });
 }
 
 async function initSession() {
@@ -236,7 +382,7 @@ async function refreshAll() {
     api("/profile"),
     api("/checkins/today"),
     api("/stats/summary"),
-    api(`/checkins/calendar?month=${monthKey()}`),
+    api(`/checkins/calendar?month=${state.calendarMonth}`),
     api("/groups/current"),
     api("/groups/feed"),
   ]);
@@ -249,6 +395,7 @@ async function refreshAll() {
   state.feed = feed.items || [];
   renderMoodOptions();
   renderHome();
+  renderHomeSupervision();
   renderCalendar();
   renderTrend();
   renderGroup();
@@ -324,19 +471,50 @@ async function joinGroup() {
 }
 
 function registerEvents() {
-  document.querySelectorAll(".nav-item").forEach((item) => item.addEventListener("click", () => switchPage(item.dataset.target)));
+  document.querySelectorAll(".nav-item").forEach((item) => {
+    item.addEventListener("click", () => switchPage(item.dataset.target));
+  });
   el.profileShortcut.addEventListener("click", () => switchPage("profile"));
   el.moodGrid.addEventListener("click", (event) => {
     const button = event.target.closest(".mood-chip");
     if (!button) return;
     state.selectedMood = button.dataset.mood;
-    el.moodHint.textContent = `当前选择：${state.selectedMood}`;
     renderMoodOptions();
   });
   el.checkinButton.addEventListener("click", submitCheckin);
   el.profileForm.addEventListener("submit", saveProfile);
   el.createGroupButton.addEventListener("click", createGroup);
   el.joinGroupButton.addEventListener("click", joinGroup);
+  el.homeSupervisionPanel.addEventListener("click", async (event) => {
+    const actionTarget = event.target.closest("[data-home-action]");
+    const copyTarget = event.target.closest("[data-copy-invite]");
+
+    if (copyTarget) {
+      try {
+        await navigator.clipboard.writeText(copyTarget.dataset.copyInvite);
+        showToast("邀请码已复制");
+      } catch {
+        showToast(`邀请码：${copyTarget.dataset.copyInvite}`);
+      }
+      return;
+    }
+
+    if (!actionTarget) return;
+    const action = actionTarget.dataset.homeAction;
+    if (action === "open-challenge") {
+      switchPage("challenge");
+      return;
+    }
+    if (action === "create-group") {
+      switchPage("challenge");
+      el.groupNameInput.focus();
+      return;
+    }
+    if (action === "join-group") {
+      switchPage("challenge");
+      el.inviteCodeInput.focus();
+    }
+  });
 }
 
 async function boot() {
@@ -352,4 +530,25 @@ async function boot() {
   }
 }
 
+async function changeCalendarMonth(offset) {
+  state.calendarMonth = shiftMonth(state.calendarMonth, offset);
+  try {
+    const calendar = await api(`/checkins/calendar?month=${state.calendarMonth}`);
+    state.calendar = calendar.days;
+    renderCalendar();
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+function registerCalendarEvents() {
+  el.calendarPrev.addEventListener("click", () => {
+    changeCalendarMonth(-1);
+  });
+  el.calendarNext.addEventListener("click", () => {
+    changeCalendarMonth(1);
+  });
+}
+
+registerCalendarEvents();
 boot();
