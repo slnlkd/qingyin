@@ -3,6 +3,7 @@ const API_BASE =
   (location.hostname === "127.0.0.1" || location.hostname === "localhost"
     ? "http://127.0.0.1:8000/api"
     : `${location.origin}/qingyin-api`);
+const IS_LOCAL_DEV = location.hostname === "127.0.0.1" || location.hostname === "localhost";
 
 const TOKEN_KEY = "qingyin_session_token";
 const moodMap = [
@@ -24,6 +25,7 @@ const state = {
   group: null,
   members: [],
   feed: [],
+  checkinUiState: "idle",
 };
 
 class SessionExpiredError extends Error {
@@ -37,15 +39,19 @@ const el = {
   todayLabel: document.querySelector("#todayLabel"),
   homeGreeting: document.querySelector("#homeGreeting"),
   soberDaysHero: document.querySelector("#soberDaysHero"),
+  soberDaysCard: document.querySelector("#soberDaysCard"),
+  checkinRing: document.querySelector("#checkinRing"),
+  ringInner: document.querySelector("#ringInner"),
   ringTitle: document.querySelector("#ringTitle"),
   ringMark: document.querySelector("#ringMark"),
   ringSubtitle: document.querySelector("#ringSubtitle"),
   homeSupervisionPanel: document.querySelector("#homeSupervisionPanel"),
   moodGrid: document.querySelector("#moodGrid"),
   reflectionInput: document.querySelector("#reflectionInput"),
-  checkinButton: document.querySelector("#checkinButton"),
+  devResetCheckinButton: document.querySelector("#devResetCheckinButton"),
   soberDaysValue: document.querySelector("#soberDaysValue"),
   savedAmountValue: document.querySelector("#savedAmountValue"),
+  savedAmountCard: document.querySelector("#savedAmountCard"),
   totalCheckinsValue: document.querySelector("#totalCheckinsValue"),
   dailyBudgetValue: document.querySelector("#dailyBudgetValue"),
   calendarMonthLabel: document.querySelector("#calendarMonthLabel"),
@@ -58,9 +64,18 @@ const el = {
   createGroupButton: document.querySelector("#createGroupButton"),
   joinGroupButton: document.querySelector("#joinGroupButton"),
   groupCard: document.querySelector("#groupCard"),
+  groupManagement: document.querySelector("#groupManagement"),
+  groupRenameInput: document.querySelector("#groupRenameInput"),
+  renameGroupButton: document.querySelector("#renameGroupButton"),
+  refreshInviteButton: document.querySelector("#refreshInviteButton"),
   memberList: document.querySelector("#memberList"),
   feedList: document.querySelector("#feedList"),
   profileForm: document.querySelector("#profileForm"),
+  profileSoberDaysValue: document.querySelector("#profileSoberDaysValue"),
+  profileCheckinsValue: document.querySelector("#profileCheckinsValue"),
+  profileSavedAmountValue: document.querySelector("#profileSavedAmountValue"),
+  profileGroupCard: document.querySelector("#profileGroupCard"),
+  refreshProfileButton: document.querySelector("#refreshProfileButton"),
   profileShortcut: document.querySelector("#profileShortcut"),
   toast: document.querySelector("#toast"),
 };
@@ -113,6 +128,37 @@ function formatFeedTime(value) {
     hour12: false,
     timeZone: "Asia/Shanghai",
   }).format(parsed);
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => {
+    const map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+    return map[char];
+  });
+}
+
+function ringMarkIcon(mode) {
+  if (mode === "success") {
+    return `
+      <svg class="ring-mark-icon ring-mark-icon-success" viewBox="0 0 48 48">
+        <circle class="ring-mark-circle" cx="24" cy="24" r="16"></circle>
+        <path class="ring-mark-check" d="M16.5 24.5 22 30l11-12"></path>
+      </svg>
+    `;
+  }
+  if (mode === "loading") {
+    return `
+      <svg class="ring-mark-icon ring-mark-icon-loading" viewBox="0 0 48 48">
+        <circle class="ring-mark-pulse" cx="24" cy="24" r="6"></circle>
+      </svg>
+    `;
+  }
+  return `
+    <svg class="ring-mark-icon ring-mark-icon-idle" viewBox="0 0 48 48">
+      <circle class="ring-mark-outline" cx="24" cy="24" r="14"></circle>
+      <circle class="ring-mark-core" cx="24" cy="24" r="3"></circle>
+    </svg>
+  `;
 }
 
 function moodIcon(name) {
@@ -205,9 +251,26 @@ function renderMoodOptions() {
     .join("");
 }
 
+function triggerHomeCelebration() {
+  const targets = [
+    el.soberDaysHero,
+    el.todayLabel,
+    el.soberDaysCard,
+    el.savedAmountCard,
+  ].filter(Boolean);
+  targets.forEach((node) => node.classList.remove("is-celebrating"));
+  void document.body.offsetWidth;
+  targets.forEach((node) => node.classList.add("is-celebrating"));
+  clearTimeout(triggerHomeCelebration.timer);
+  triggerHomeCelebration.timer = setTimeout(() => {
+    targets.forEach((node) => node.classList.remove("is-celebrating"));
+  }, 920);
+}
+
 function renderHome() {
   const soberDays = state.summary?.sober_days ?? 1;
   const checkedIn = state.today?.checked_in;
+  const uiState = checkedIn ? "completed" : state.checkinUiState;
   el.todayLabel.textContent = formatDateLabel();
   el.homeGreeting.textContent = `你已坚持戒酒第 ${soberDays} 天`;
   el.soberDaysHero.textContent = soberDays;
@@ -215,13 +278,34 @@ function renderHome() {
   el.savedAmountValue.textContent = formatMoney(state.summary?.saved_amount ?? 0);
   el.totalCheckinsValue.textContent = state.summary?.total_checkins ?? 0;
   el.dailyBudgetValue.textContent = formatMoney(state.summary?.daily_budget ?? 0);
-  el.ringTitle.textContent = checkedIn ? "今日已打卡" : "等待打卡";
-  el.ringMark.textContent = checkedIn ? "✓" : "○";
-  el.ringSubtitle.textContent = checkedIn
-    ? "很好，今天你又为自己守住了一天。"
-    : "现在签到，给今天一个明确的承诺。";
-  el.checkinButton.disabled = checkedIn;
-  el.checkinButton.textContent = checkedIn ? "今天已经完成打卡" : "完成今日打卡";
+  el.checkinRing.classList.remove("is-actionable", "is-loading", "is-success", "is-completed");
+
+  if (uiState === "loading") {
+    el.checkinRing.classList.add("is-loading");
+    el.ringTitle.textContent = "正在打卡";
+    el.ringMark.innerHTML = ringMarkIcon("loading");
+    el.ringSubtitle.textContent = "正在为今天留下一个清醒的确认。";
+  } else if (uiState === "success") {
+    el.checkinRing.classList.add("is-success");
+    el.ringTitle.textContent = "今日已打卡";
+    el.ringMark.innerHTML = ringMarkIcon("success");
+    el.ringSubtitle.textContent = "很好，今天你又为自己守住了一天。";
+  } else if (uiState === "completed") {
+    el.checkinRing.classList.add("is-completed");
+    el.ringTitle.textContent = "今日已打卡";
+    el.ringMark.innerHTML = ringMarkIcon("success");
+    el.ringSubtitle.textContent = "很好，今天你又为自己守住了一天。";
+  } else {
+    el.checkinRing.classList.add("is-actionable");
+    el.ringTitle.textContent = "点击打卡";
+    el.ringMark.innerHTML = ringMarkIcon("idle");
+    el.ringSubtitle.textContent = "现在签到，给今天一个明确的承诺。";
+  }
+
+  el.checkinRing.disabled = uiState === "loading" || checkedIn;
+  if (IS_LOCAL_DEV) {
+    el.devResetCheckinButton.classList.toggle("hidden", uiState === "loading");
+  }
 }
 
 function pendingCount(members) {
@@ -335,19 +419,31 @@ function renderTrend() {
 function renderGroup() {
   if (!state.group) {
     el.groupCard.innerHTML = "<p>你还没有加入监督群组。先创建一个，或者使用邀请码加入。</p>";
+    el.groupManagement.classList.add("hidden");
     el.memberList.innerHTML = "";
     return;
   }
 
   el.groupCard.innerHTML = `
-    <div class="member-card-top">
-      <div>
-        <div class="member-name">${state.group.name}</div>
-        <div class="group-meta">邀请码：${state.group.invite_code}</div>
+    <div class="group-card-main">
+      <div class="member-card-top">
+        <div>
+          <div class="member-name">${state.group.name}</div>
+          <div class="group-meta">邀请码：${state.group.invite_code}</div>
+        </div>
+        <div class="member-meta">${state.group.viewer_role === "owner" ? "群主" : "成员"}</div>
       </div>
-      <div class="member-meta">监督中</div>
+      <div class="group-card-meta">
+        <span class="meta-pill">成员 ${state.members.length} 人</span>
+        <span class="meta-pill">${pendingCount(state.members)} 人待打卡</span>
+      </div>
     </div>
   `;
+  const isOwner = state.group.viewer_role === "owner";
+  el.groupManagement.classList.toggle("hidden", !isOwner);
+  if (isOwner) {
+    el.groupRenameInput.value = state.group.name;
+  }
 
   el.memberList.innerHTML = state.members
     .map(
@@ -369,10 +465,23 @@ function renderGroup() {
 }
 
 function formatFeedItem(item) {
-  if (item.event_type === "checkin") return `${item.payload.mood} · ${item.payload.reflection || "完成了今天的打卡"}`;
-  if (item.event_type === "member_joined") return "加入了监督群组";
-  if (item.event_type === "group_created") return `创建了群组「${item.payload.group_name}」`;
-  return "有新的动态";
+  if (item.event_type === "checkin") return `${item.payload.mood} · ${item.payload.reflection || "又坚持了一天，继续保持。"}`
+  if (item.event_type === "member_joined") return "加入了监督群组，一起开始互相监督。";
+  if (item.event_type === "group_created") return `创建了监督群组「${item.payload.group_name}」，新的坚持已经开始。`;
+  if (item.event_type === "group_updated") return `把群组名称更新为「${item.payload.group_name}」。`;
+  if (item.event_type === "invite_code_refreshed") return `刷新了新的邀请码：${item.payload.invite_code}。`;
+  return "有新的监督动态。";
+}
+
+function formatFeedType(item) {
+  const labels = {
+    checkin: "今日打卡",
+    member_joined: "加入群组",
+    group_created: "创建群组",
+    group_updated: "更新群组",
+    invite_code_refreshed: "刷新邀请码",
+  };
+  return labels[item.event_type] || "监督动态";
 }
 
 function renderFeed() {
@@ -390,13 +499,41 @@ function renderFeed() {
               <div class="feed-name">${item.avatar_emoji} ${item.nickname}</div>
               <div class="feed-meta">${formatFeedTime(item.created_at)}</div>
             </div>
-            <div class="feed-meta">${item.event_type}</div>
+            <div class="feed-badge">${formatFeedType(item)}</div>
           </div>
-          <div class="feed-body">${formatFeedItem(item)}</div>
+          <div class="feed-body">${escapeHtml(formatFeedItem(item))}</div>
         </article>
       `,
     )
     .join("");
+}
+
+function renderProfileSummary() {
+  el.profileSoberDaysValue.textContent = `${state.summary?.sober_days ?? 0} 天`;
+  el.profileCheckinsValue.textContent = `${state.summary?.total_checkins ?? 0} 次`;
+  el.profileSavedAmountValue.textContent = formatMoney(state.summary?.saved_amount ?? 0);
+
+  if (!state.group) {
+    el.profileGroupCard.innerHTML = "<p>暂未加入监督群组，去挑战页创建或输入邀请码加入。</p>";
+    return;
+  }
+
+  el.profileGroupCard.innerHTML = `
+    <div class="profile-group-main">
+      <div class="member-card-top">
+        <div>
+          <div class="member-name">${state.group.name}</div>
+          <div class="group-meta">邀请码：${state.group.invite_code}</div>
+        </div>
+        <div class="member-meta">${state.group.viewer_role === "owner" ? "群主" : "成员"}</div>
+      </div>
+      <div class="profile-group-meta">
+        <span class="meta-pill">成员 ${state.members.length} 人</span>
+        <span class="meta-pill">${pendingCount(state.members)} 人待打卡</span>
+      </div>
+      <button class="secondary-btn" type="button" data-profile-action="open-challenge">前往群组</button>
+    </div>
+  `;
 }
 
 function fillProfileForm() {
@@ -448,10 +585,14 @@ async function refreshAll() {
   renderTrend();
   renderGroup();
   renderFeed();
+  renderProfileSummary();
   fillProfileForm();
 }
 
 async function submitCheckin() {
+  if (state.today?.checked_in || state.checkinUiState === "loading") return;
+  state.checkinUiState = "loading";
+  renderHome();
   try {
     await api("/checkins", {
       method: "POST",
@@ -461,8 +602,26 @@ async function submitCheckin() {
       }),
     });
     el.reflectionInput.value = "";
+    state.checkinUiState = "success";
+    renderHome();
+    triggerHomeCelebration();
+    await new Promise((resolve) => setTimeout(resolve, 820));
     showToast("今日打卡已完成");
     await refreshAll();
+  } catch (error) {
+    state.checkinUiState = "idle";
+    renderHome();
+    await handleActionError(error);
+  }
+}
+
+async function resetTodayCheckinForDev() {
+  try {
+    await api("/dev/reset-today-checkin", { method: "POST" });
+    state.checkinUiState = "idle";
+    el.reflectionInput.value = "";
+    await refreshAll();
+    showToast("已重置今日打卡");
   } catch (error) {
     await handleActionError(error);
   }
@@ -518,6 +677,19 @@ async function joinGroup() {
   }
 }
 
+async function updateGroup(options) {
+  try {
+    await api("/groups/current", {
+      method: "PUT",
+      body: JSON.stringify(options),
+    });
+    showToast(options.refresh_invite_code ? "邀请码已刷新" : "群组信息已更新");
+    await refreshAll();
+  } catch (error) {
+    await handleActionError(error);
+  }
+}
+
 function registerEvents() {
   document.querySelectorAll(".nav-item").forEach((item) => {
     item.addEventListener("click", () => switchPage(item.dataset.target));
@@ -529,10 +701,30 @@ function registerEvents() {
     state.selectedMood = button.dataset.mood;
     renderMoodOptions();
   });
-  el.checkinButton.addEventListener("click", submitCheckin);
+  el.checkinRing.addEventListener("click", submitCheckin);
+  if (IS_LOCAL_DEV) {
+    el.devResetCheckinButton.classList.remove("hidden");
+    el.devResetCheckinButton.addEventListener("click", resetTodayCheckinForDev);
+  }
   el.profileForm.addEventListener("submit", saveProfile);
   el.createGroupButton.addEventListener("click", createGroup);
   el.joinGroupButton.addEventListener("click", joinGroup);
+  el.renameGroupButton.addEventListener("click", () => {
+    const name = el.groupRenameInput.value.trim();
+    if (!name) return showToast("请输入新的群组名称");
+    updateGroup({ name });
+  });
+  el.refreshInviteButton.addEventListener("click", () => {
+    updateGroup({ refresh_invite_code: true });
+  });
+  el.refreshProfileButton.addEventListener("click", async () => {
+    try {
+      await refreshAll();
+      showToast("已刷新最新数据");
+    } catch (error) {
+      await handleActionError(error);
+    }
+  });
   el.homeSupervisionPanel.addEventListener("click", async (event) => {
     const actionTarget = event.target.closest("[data-home-action]");
     const copyTarget = event.target.closest("[data-copy-invite]");
@@ -563,6 +755,13 @@ function registerEvents() {
       el.inviteCodeInput.focus();
     }
   });
+  el.profileGroupCard.addEventListener("click", (event) => {
+    const actionTarget = event.target.closest("[data-profile-action]");
+    if (!actionTarget) return;
+    if (actionTarget.dataset.profileAction === "open-challenge") {
+      switchPage("challenge");
+    }
+  });
 }
 
 async function boot() {
@@ -581,6 +780,7 @@ async function boot() {
       .catch(() => {});
   }
   try {
+    state.checkinUiState = "idle";
     await refreshAll();
   } catch (error) {
     if (error instanceof SessionExpiredError) {

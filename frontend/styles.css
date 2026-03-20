@@ -255,6 +255,10 @@ body {
   letter-spacing: -0.03em;
 }
 
+.hero-days.is-celebrating {
+  animation: number-pop 880ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
 .hero-date {
   margin-top: 8px;
   color: var(--text);
@@ -262,75 +266,286 @@ body {
   font-weight: 700;
 }
 
+.hero-date.is-celebrating {
+  animation: date-glow 820ms ease-out;
+}
+
 .checkin-ring {
-  width: 226px;
-  height: 226px;
-  margin: 16px auto 8px;
+  width: 236px;
+  height: 236px;
+  margin: 18px auto 10px;
   border-radius: 50%;
   display: grid;
   place-items: center;
+  border: 0;
   background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.96) 0 48%, transparent 48.6%),
-    conic-gradient(from 215deg, rgba(152, 223, 195, 0.05) 0deg, rgba(168, 243, 214, 0.68) 38deg, #84ddbb 158deg, rgba(168, 243, 214, 0.68) 298deg, rgba(152, 223, 195, 0.05) 360deg);
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.98) 0 46%, transparent 46.6%),
+    conic-gradient(from 210deg, rgba(152, 223, 195, 0.02) 0deg, rgba(203, 251, 231, 0.82) 28deg, #7fe1bd 144deg, rgba(175, 244, 215, 0.76) 300deg, rgba(152, 223, 195, 0.02) 360deg);
   box-shadow:
     inset 0 0 0 12px rgba(255, 255, 255, 0.84),
-    inset 0 0 0 26px rgba(216, 246, 231, 0.24),
+    inset 0 0 0 30px rgba(216, 246, 231, 0.22),
     0 0 0 6px rgba(232, 251, 242, 0.58),
-    0 18px 26px rgba(104, 176, 149, 0.1),
-    0 0 34px rgba(135, 221, 189, 0.42);
+    0 18px 30px rgba(104, 176, 149, 0.12),
+    0 0 44px rgba(135, 221, 189, 0.46);
   position: relative;
+  cursor: pointer;
+  transition: transform 220ms ease, box-shadow 320ms ease, filter 320ms ease, background 320ms ease;
+  overflow: visible;
+}
+
+.checkin-ring.is-actionable:hover,
+.checkin-ring.is-actionable:focus-visible {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow:
+    inset 0 0 0 12px rgba(255, 255, 255, 0.84),
+    inset 0 0 0 30px rgba(216, 246, 231, 0.3),
+    0 0 0 6px rgba(232, 251, 242, 0.58),
+    0 20px 34px rgba(104, 176, 149, 0.14),
+    0 0 52px rgba(135, 221, 189, 0.56);
+}
+
+.checkin-ring.is-actionable:active {
+  transform: scale(0.97);
+}
+
+.checkin-ring:disabled {
+  cursor: default;
 }
 
 .checkin-ring::before,
 .checkin-ring::after {
   content: "";
   position: absolute;
-  inset: 18px;
+  inset: 14px;
   border-radius: 50%;
   pointer-events: none;
+  transition: opacity 260ms ease, filter 320ms ease, border-color 260ms ease, background 320ms ease;
 }
 
 .checkin-ring::before {
-  inset: 8px;
-  border: 12px solid rgba(224, 250, 239, 0.42);
+  inset: 6px;
+  border: 11px solid rgba(229, 251, 241, 0.45);
   mask: radial-gradient(circle at center, transparent 59%, #000 60%);
 }
 
 .checkin-ring::after {
   inset: auto;
-  width: 240px;
-  height: 240px;
+  width: 258px;
+  height: 258px;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle at center, rgba(174, 245, 214, 0.34), transparent 58%);
-  filter: blur(8px);
+  background:
+    radial-gradient(circle at center, rgba(174, 245, 214, 0.24), rgba(174, 245, 214, 0.08) 42%, transparent 66%);
+  filter: blur(10px);
   z-index: -1;
 }
 
+.checkin-ring.is-loading::before {
+  border-color: rgba(224, 250, 239, 0.24);
+}
+
+.checkin-ring.is-loading::after {
+  background:
+    conic-gradient(from 0deg, transparent 0deg, rgba(170, 246, 214, 0.96) 74deg, transparent 150deg),
+    radial-gradient(circle at center, rgba(174, 245, 214, 0.24), transparent 58%);
+  animation: ring-sweep 900ms linear infinite;
+  filter: blur(4px);
+}
+
+.checkin-ring.is-success,
+.checkin-ring.is-completed {
+  box-shadow:
+    inset 0 0 0 12px rgba(255, 255, 255, 0.84),
+    inset 0 0 0 30px rgba(216, 246, 231, 0.34),
+    0 0 0 6px rgba(232, 251, 242, 0.58),
+    0 18px 30px rgba(104, 176, 149, 0.14),
+    0 0 56px rgba(135, 221, 189, 0.58);
+}
+
+.checkin-ring.is-success {
+  animation: ring-celebrate 880ms cubic-bezier(0.18, 0.88, 0.24, 1);
+}
+
+.ring-orbit,
+.ring-spark,
+.ring-core-glow {
+  position: absolute;
+  pointer-events: none;
+}
+
+.ring-orbit {
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 260ms ease, transform 320ms ease;
+}
+
+.ring-orbit-a {
+  inset: -6px;
+  border: 1px solid rgba(183, 237, 212, 0.44);
+}
+
+.ring-orbit-b {
+  inset: 10px;
+  border: 1px dashed rgba(183, 237, 212, 0.42);
+}
+
+.checkin-ring.is-actionable .ring-orbit-a {
+  opacity: 0.9;
+  animation: orbit-float 4.2s linear infinite;
+}
+
+.checkin-ring.is-actionable .ring-orbit-b {
+  opacity: 0.55;
+  animation: orbit-float-reverse 5.4s linear infinite;
+}
+
+.ring-spark {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  opacity: 0;
+  background: radial-gradient(circle at center, rgba(223, 255, 243, 0.98), rgba(143, 236, 194, 0.92));
+  box-shadow: 0 0 14px rgba(143, 236, 194, 0.45);
+  transform: scale(0.7);
+}
+
+.ring-spark-a {
+  top: 20px;
+  left: 46px;
+}
+
+.ring-spark-b {
+  top: 44px;
+  right: 26px;
+}
+
+.ring-spark-c {
+  right: 36px;
+  bottom: 40px;
+}
+
+.ring-spark-d {
+  left: 34px;
+  bottom: 28px;
+}
+
+.checkin-ring.is-success .ring-spark {
+  animation: spark-burst 920ms cubic-bezier(0.18, 0.82, 0.24, 1) forwards;
+}
+
 .ring-inner {
-  width: 140px;
-  height: 140px;
+  width: 146px;
+  height: 146px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   gap: 2px;
   align-content: center;
-  background: linear-gradient(180deg, rgba(228, 251, 241, 0.98), rgba(185, 235, 213, 0.94));
+  background: linear-gradient(180deg, rgba(236, 253, 246, 1), rgba(185, 235, 213, 0.96));
   box-shadow:
     inset 0 0 0 10px rgba(255, 255, 255, 0.54),
-    0 10px 20px rgba(134, 198, 173, 0.18);
+    inset 0 -8px 18px rgba(118, 198, 166, 0.14),
+    0 12px 26px rgba(134, 198, 173, 0.2);
+  transition: transform 260ms ease, box-shadow 320ms ease, background 320ms ease, opacity 220ms ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.checkin-ring.is-loading .ring-inner {
+  transform: scale(0.965);
+  box-shadow:
+    inset 0 0 0 10px rgba(255, 255, 255, 0.54),
+    inset 0 -8px 18px rgba(118, 198, 166, 0.14),
+    0 16px 28px rgba(134, 198, 173, 0.24);
+}
+
+.checkin-ring.is-success .ring-inner {
+  animation: ring-center-pop 760ms cubic-bezier(0.16, 0.9, 0.22, 1);
+}
+
+.ring-core-glow {
+  inset: 8px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 40% 32%, rgba(255, 255, 255, 0.96), transparent 34%),
+    radial-gradient(circle at center, rgba(208, 248, 228, 0.52), transparent 64%);
+  opacity: 0.9;
+  transition: opacity 280ms ease, transform 320ms ease;
 }
 
 .ring-mark {
-  font-size: 48px;
-  line-height: 1;
+  transition: transform 260ms ease, opacity 260ms ease, filter 260ms ease;
+  position: relative;
+  z-index: 1;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
   color: var(--accent-deep);
+}
+
+.ring-mark-icon {
+  width: 58px;
+  height: 58px;
+  overflow: visible;
+}
+
+.ring-mark-outline,
+.ring-mark-circle {
+  fill: rgba(255, 255, 255, 0.42);
+  stroke: currentColor;
+  stroke-width: 2.6;
+}
+
+.ring-mark-core,
+.ring-mark-pulse {
+  fill: currentColor;
+}
+
+.ring-mark-check {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ring-mark-icon-idle .ring-mark-core {
+  opacity: 0.72;
+}
+
+.ring-mark-icon-success .ring-mark-circle {
+  filter: drop-shadow(0 0 8px rgba(123, 207, 176, 0.28));
+}
+
+.ring-mark-icon-success .ring-mark-check {
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+  animation: check-draw 420ms ease-out forwards;
+}
+
+.checkin-ring.is-loading .ring-mark {
+  opacity: 0.6;
+  transform: scale(0.9);
+  animation: ring-dot-pulse 700ms ease-in-out infinite;
+}
+
+.checkin-ring.is-loading .ring-mark-pulse {
+  animation: loading-core-pulse 700ms ease-in-out infinite;
+}
+
+.checkin-ring.is-success .ring-mark {
+  animation: check-pop 620ms cubic-bezier(0.18, 0.88, 0.24, 1) 90ms both;
 }
 
 .ring-title {
   font-size: 18px;
   font-weight: 800;
+  position: relative;
+  z-index: 1;
+  letter-spacing: -0.02em;
+  transition: transform 240ms ease, opacity 240ms ease, letter-spacing 240ms ease;
 }
 
 .ring-caption {
@@ -338,6 +553,29 @@ body {
   color: var(--muted);
   font-size: 14px;
   font-weight: 700;
+  transition: transform 260ms ease, opacity 260ms ease, color 260ms ease;
+}
+
+.checkin-ring.is-loading .ring-title,
+.checkin-ring.is-loading + .ring-caption {
+  opacity: 0.82;
+  transform: translateY(1px);
+}
+
+.checkin-ring.is-success .ring-title,
+.checkin-ring.is-completed .ring-title {
+  transform: translateY(-1px);
+  letter-spacing: -0.015em;
+}
+
+.checkin-ring.is-success + .ring-caption {
+  animation: caption-settle 760ms cubic-bezier(0.18, 0.88, 0.24, 1);
+}
+
+.checkin-ring.is-success .ring-core-glow,
+.checkin-ring.is-completed .ring-core-glow {
+  opacity: 1;
+  transform: scale(1.04);
 }
 
 .supervision-strip {
@@ -603,6 +841,10 @@ textarea {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 249, 246, 0.94)),
     var(--card);
+}
+
+.metric-card.is-celebrating {
+  animation: metric-lift 900ms cubic-bezier(0.2, 0.88, 0.22, 1);
 }
 
 .metric-icon {
@@ -923,12 +1165,63 @@ textarea {
   gap: 12px;
 }
 
+.group-management {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(121, 157, 144, 0.12);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.hidden {
+  display: none !important;
+}
+
 .group-card,
 .feed-item,
 .member-card,
 .feed-empty {
   border-radius: 22px;
   padding: 18px;
+}
+
+.profile-group-card {
+  margin-top: 14px;
+}
+
+.profile-summary-stack {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.profile-status-card {
+  padding: 12px 10px 13px;
+  min-height: 84px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.profile-status-card strong {
+  font-size: 18px;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.profile-status-card span {
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.compact-head {
+  margin-bottom: 12px;
+}
+
+.compact-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
 }
 
 .member-card-top,
@@ -943,6 +1236,38 @@ textarea {
 .feed-name {
   font-size: 16px;
   font-weight: 800;
+}
+
+.group-card-main,
+.profile-group-main {
+  display: grid;
+  gap: 8px;
+}
+
+.group-card-meta,
+.profile-group-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.meta-pill {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(227, 247, 238, 0.92);
+  color: var(--accent-deep);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.feed-badge {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(227, 247, 238, 0.92);
+  color: var(--accent-deep);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .member-card p,
@@ -1058,6 +1383,177 @@ textarea {
   }
 }
 
+@keyframes ring-sweep {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes ring-celebrate {
+  0% {
+    transform: scale(0.965);
+  }
+  38% {
+    transform: scale(1.018);
+  }
+  68% {
+    transform: scale(0.994);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes orbit-float {
+  from {
+    transform: rotate(0deg) scale(1);
+  }
+  to {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes orbit-float-reverse {
+  from {
+    transform: rotate(360deg) scale(1);
+  }
+  to {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes ring-center-pop {
+  0% {
+    transform: scale(0.94);
+  }
+  42% {
+    transform: scale(1.04);
+  }
+  72% {
+    transform: scale(0.992);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes check-pop {
+  0% {
+    transform: scale(0.7) translateY(3px);
+    opacity: 0.12;
+  }
+  55% {
+    transform: scale(1.08) translateY(-1px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes check-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes ring-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes loading-core-pulse {
+  0%,
+  100% {
+    transform: scale(0.72);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+@keyframes spark-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  32% {
+    opacity: 0.92;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.5);
+  }
+}
+
+@keyframes caption-settle {
+  0% {
+    opacity: 0.56;
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes number-pop {
+  0% {
+    transform: translateY(0) scale(1);
+    text-shadow: none;
+  }
+  38% {
+    transform: translateY(-4px) scale(1.08);
+    text-shadow: 0 0 24px rgba(129, 214, 181, 0.28);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    text-shadow: none;
+  }
+}
+
+@keyframes metric-lift {
+  0% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 12px 34px rgba(109, 140, 127, 0.08);
+  }
+  42% {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 22px 38px rgba(96, 176, 146, 0.18);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 12px 34px rgba(109, 140, 127, 0.08);
+  }
+}
+
+@keyframes date-glow {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  40% {
+    transform: translateY(-2px);
+    opacity: 0.78;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 @media (max-width: 420px) {
   .app-shell {
     padding: 0;
@@ -1079,7 +1575,8 @@ textarea {
   }
 
   .stats-row,
-  .summary-stack {
+  .summary-stack,
+  .profile-summary-stack {
     grid-template-columns: 1fr;
   }
 

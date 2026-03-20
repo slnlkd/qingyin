@@ -54,6 +54,11 @@ class GroupJoinPayload(BaseModel):
     invite_code: str = Field(min_length=6, max_length=12)
 
 
+class GroupUpdatePayload(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=30)
+    refresh_invite_code: bool = False
+
+
 @contextmanager
 def get_db() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
@@ -68,6 +73,12 @@ def get_db() -> sqlite3.Connection:
 
 def now_iso() -> str:
     return datetime.now(APP_TZ).isoformat(timespec="seconds")
+
+
+def is_dev_mode() -> bool:
+    if os.getenv("QINGYIN_ENABLE_DEV_TOOLS") == "1":
+        return True
+    return DB_PATH == BASE_DIR / "qingyin.db"
 
 
 def init_db() -> None:
@@ -193,6 +204,21 @@ def ensure_group_membership(conn: sqlite3.Connection, user_id: int) -> sqlite3.R
     ).fetchone()
 
 
+def require_group_owner(conn: sqlite3.Connection, group_id: int, user_id: int) -> None:
+    row = conn.execute(
+        """
+        SELECT role
+        FROM group_members
+        WHERE group_id = ? AND user_id = ?
+        """,
+        (group_id, user_id),
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="当前账号未加入监督群组")
+    if row["role"] != "owner":
+        raise HTTPException(status_code=403, detail="只有群主可以修改群组")
+
+
 def create_feed_event(
     conn: sqlite3.Connection,
     group_id: int,
@@ -316,6 +342,31 @@ def create_checkin(payload: CheckinPayload, user: dict[str, Any] = Depends(auth_
     return {"success": True, "date": today}
 
 
+@app.post("/api/dev/reset-today-checkin")
+def reset_today_checkin(user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
+    if not is_dev_mode():
+        raise HTTPException(status_code=403, detail="当前环境不允许使用开发工具")
+
+    today = date.today().isoformat()
+    with get_db() as conn:
+        group = ensure_group_membership(conn, user["user_id"])
+        deleted_checkins = conn.execute(
+            "DELETE FROM checkins WHERE user_id = ? AND checkin_date = ?",
+            (user["user_id"], today),
+        ).rowcount
+        deleted_events = 0
+        if group:
+            deleted_events = conn.execute(
+                """
+                DELETE FROM feed_events
+                WHERE group_id = ? AND actor_user_id = ? AND event_type = 'checkin'
+                  AND substr(created_at, 1, 10) = ?
+                """,
+                (group["id"], user["user_id"], today),
+            ).rowcount
+    return {"reset": bool(deleted_checkins), "deleted_checkins": deleted_checkins, "deleted_events": deleted_events}
+
+
 @app.get("/api/checkins/calendar")
 def checkin_calendar(month: str, user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
     month_prefix = f"{month}-"
@@ -421,6 +472,51 @@ def join_group(payload: GroupJoinPayload, user: dict[str, Any] = Depends(auth_us
     return {"joined": True, "group_name": group["name"]}
 
 
+@app.put("/api/groups/current")
+def update_current_group(payload: GroupUpdatePayload, user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
+    if payload.name is None and not payload.refresh_invite_code:
+        raise HTTPException(status_code=422, detail="至少提交一项群组修改")
+
+    with get_db() as conn:
+        group = ensure_group_membership(conn, user["user_id"])
+        if not group:
+            raise HTTPException(status_code=404, detail="当前账号未加入监督群组")
+
+        require_group_owner(conn, group["id"], user["user_id"])
+        group_name = group["name"]
+        invite_code = group["invite_code"]
+
+        if payload.name is not None:
+            group_name = payload.name.strip()
+            conn.execute(
+                "UPDATE supervision_groups SET name = ? WHERE id = ?",
+                (group_name, group["id"]),
+            )
+            create_feed_event(
+                conn,
+                group["id"],
+                user["user_id"],
+                "group_updated",
+                {"group_name": group_name},
+            )
+
+        if payload.refresh_invite_code:
+            invite_code = secrets.token_hex(3).upper()
+            conn.execute(
+                "UPDATE supervision_groups SET invite_code = ? WHERE id = ?",
+                (invite_code, group["id"]),
+            )
+            create_feed_event(
+                conn,
+                group["id"],
+                user["user_id"],
+                "invite_code_refreshed",
+                {"invite_code": invite_code},
+            )
+
+    return {"group": {"name": group_name, "invite_code": invite_code}}
+
+
 @app.get("/api/groups/current")
 def current_group(user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
     today = date.today().isoformat()
@@ -459,6 +555,7 @@ def current_group(user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
     for row in rows:
         members.append(
             {
+                "user_id": row["id"],
                 "nickname": row["nickname"],
                 "avatar_emoji": row["avatar_emoji"],
                 "role": row["role"],
@@ -470,8 +567,14 @@ def current_group(user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
             }
         )
 
+    viewer_role = "member"
+    for member in members:
+        if member["user_id"] == user["user_id"]:
+            viewer_role = member["role"]
+            break
+
     return {
-        "group": {"name": group["name"], "invite_code": group["invite_code"]},
+        "group": {"name": group["name"], "invite_code": group["invite_code"], "viewer_role": viewer_role},
         "members": members,
     }
 

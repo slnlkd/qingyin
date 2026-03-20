@@ -8,9 +8,9 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>清饮 Qingyin</title>
-    <link rel="icon" href="./assets/favicon.svg?v=20260320l" type="image/svg+xml" />
-    <link rel="manifest" href="./manifest.webmanifest?v=20260320l" />
-    <link rel="stylesheet" href="./styles.css?v=20260320l" />
+    <link rel="icon" href="./assets/favicon.svg?v=20260320u" type="image/svg+xml" />
+    <link rel="manifest" href="./manifest.webmanifest?v=20260320u" />
+    <link rel="stylesheet" href="./styles.css?v=20260320u" />
   </head>
   <body>
     <div class="scene-leaf scene-leaf-left"></div>
@@ -36,12 +36,19 @@
               <p class="hero-subtitle" id="homeGreeting">你已坚持戒酒第 1 天</p>
               <div class="hero-days" id="soberDaysHero">1</div>
               <p class="hero-date" id="todayLabel"></p>
-              <div class="checkin-ring">
-                <div class="ring-inner">
-                  <div class="ring-mark" id="ringMark">✓</div>
+              <button class="checkin-ring is-actionable" id="checkinRing" type="button" aria-label="点击今日打卡">
+                <span class="ring-orbit ring-orbit-a" aria-hidden="true"></span>
+                <span class="ring-orbit ring-orbit-b" aria-hidden="true"></span>
+                <span class="ring-spark ring-spark-a" aria-hidden="true"></span>
+                <span class="ring-spark ring-spark-b" aria-hidden="true"></span>
+                <span class="ring-spark ring-spark-c" aria-hidden="true"></span>
+                <span class="ring-spark ring-spark-d" aria-hidden="true"></span>
+                <div class="ring-inner" id="ringInner">
+                  <div class="ring-core-glow" aria-hidden="true"></div>
+                  <div class="ring-mark" id="ringMark" aria-hidden="true"></div>
                   <div class="ring-title" id="ringTitle">今日已打卡</div>
                 </div>
-              </div>
+              </button>
               <p class="ring-caption" id="ringSubtitle">今天也在向更清醒的自己靠近。</p>
             </section>
 
@@ -56,11 +63,11 @@
                 <label class="field-label" for="reflectionInput">今日感悟</label>
                 <textarea id="reflectionInput" maxlength="200" placeholder="写下你今天的感悟和鼓励..."></textarea>
               </div>
-              <button class="primary-btn" id="checkinButton">完成今日打卡</button>
+              <button class="secondary-btn hidden" id="devResetCheckinButton" type="button">重置今日打卡（开发）</button>
             </section>
 
             <section class="stats-row">
-              <article class="metric-card">
+              <article class="metric-card" id="soberDaysCard">
                 <div class="metric-icon" aria-hidden="true">
                   <svg class="ui-icon ui-icon-calendar" viewBox="0 0 24 24">
                     <rect x="4" y="6" width="16" height="14" rx="3"></rect>
@@ -72,7 +79,7 @@
                   <strong id="soberDaysValue">1</strong>
                 </div>
               </article>
-              <article class="metric-card">
+              <article class="metric-card" id="savedAmountCard">
                 <div class="metric-icon" aria-hidden="true">
                   <svg class="ui-icon ui-icon-wallet" viewBox="0 0 24 24">
                     <path d="M5 7.5h12.5a2.5 2.5 0 0 1 2.5 2.5v7a2.5 2.5 0 0 1-2.5 2.5H5A2.5 2.5 0 0 1 2.5 17V10A2.5 2.5 0 0 1 5 7.5Z"></path>
@@ -169,6 +176,17 @@
               <div class="group-card" id="groupCard">
                 <p>你还没有加入监督群组。</p>
               </div>
+              <div class="group-management hidden" id="groupManagement">
+                <div class="section-head compact-head">
+                  <h3>群组管理</h3>
+                  <span>仅群主可修改</span>
+                </div>
+                <div class="group-actions">
+                  <input id="groupRenameInput" class="text-input" maxlength="30" placeholder="修改监督群组名称" />
+                  <button class="secondary-btn" id="renameGroupButton">保存群组名称</button>
+                  <button class="secondary-btn" id="refreshInviteButton">刷新邀请码</button>
+                </div>
+              </div>
               <div class="member-list" id="memberList"></div>
             </section>
           </section>
@@ -191,6 +209,23 @@
                 <h2>我的</h2>
                 <span>完善资料，保持节奏</span>
               </div>
+              <div class="summary-stack profile-summary-stack">
+                <article class="summary-card profile-status-card">
+                  <span>连续戒酒</span>
+                  <strong id="profileSoberDaysValue">0 天</strong>
+                </article>
+                <article class="summary-card profile-status-card">
+                  <span>累计签到</span>
+                  <strong id="profileCheckinsValue">0 次</strong>
+                </article>
+                <article class="summary-card profile-status-card">
+                  <span>节省金额</span>
+                  <strong id="profileSavedAmountValue">¥0</strong>
+                </article>
+              </div>
+              <div class="group-card profile-group-card" id="profileGroupCard">
+                <p>暂未加入监督群组。</p>
+              </div>
               <form id="profileForm" class="profile-form">
                 <label>
                   <span>昵称</span>
@@ -208,6 +243,7 @@
                   <span>每日饮酒预算（元）</span>
                   <input name="daily_budget" class="text-input" type="number" min="0" step="1" required />
                 </label>
+                <button class="secondary-btn" id="refreshProfileButton" type="button">刷新最新数据</button>
                 <button class="primary-btn" type="submit">保存资料</button>
               </form>
             </section>
@@ -269,6 +305,6 @@
     </main>
 
     <div id="toast" class="toast"></div>
-    <script src="./app.js?v=20260320l" type="module"></script>
+    <script src="./app.js?v=20260320u" type="module"></script>
   </body>
 </html>
