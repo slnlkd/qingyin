@@ -338,9 +338,19 @@ function renderHomeSupervision() {
   const pending = pendingCount(members);
   const done = doneCount(members);
   const focusMembers = members.slice(0, 2);
+  const incomingReminder =
+    state.group.incoming_reminder && !state.today?.checked_in
+      ? `
+        <div class="incoming-reminder">
+          <div class="incoming-reminder-title">有人提醒你该打卡了</div>
+          <div class="incoming-reminder-note">${state.group.incoming_reminder.actor_nickname} 正在等你更新今天的进度</div>
+        </div>
+      `
+      : "";
 
   el.homeSupervisionPanel.innerHTML = `
     <div class="supervision-strip-body">
+      ${incomingReminder}
       <div class="supervision-main">
         <div>
           <div class="supervision-label">今日监督</div>
@@ -458,6 +468,15 @@ function renderGroup() {
           </div>
           <p>最近状态：${member.latest_mood || "尚未打卡"} ${member.latest_reflection ? `· ${member.latest_reflection}` : ""}</p>
           <p>累计节省：${formatMoney(member.saved_amount)}</p>
+          ${
+            member.user_id !== state.profile?.user_id && !member.checked_in_today
+              ? `<div class="member-card-actions">
+                  <button class="secondary-btn remind-btn ${state.group?.reminder_used_today ? "is-disabled" : ""}" type="button" data-remind-user-id="${member.user_id}" ${state.group?.reminder_used_today ? "disabled" : ""}>
+                    ${state.group?.reminder_target_user_id === member.user_id ? "已提醒" : "催一下"}
+                  </button>
+                </div>`
+              : ""
+          }
         </article>
       `,
     )
@@ -470,6 +489,7 @@ function formatFeedItem(item) {
   if (item.event_type === "group_created") return `创建了监督群组「${item.payload.group_name}」，新的坚持已经开始。`;
   if (item.event_type === "group_updated") return `把群组名称更新为「${item.payload.group_name}」。`;
   if (item.event_type === "invite_code_refreshed") return `刷新了新的邀请码：${item.payload.invite_code}。`;
+  if (item.event_type === "member_reminded") return `提醒 ${item.payload.target_nickname} 该打卡了。`;
   return "有新的监督动态。";
 }
 
@@ -480,6 +500,7 @@ function formatFeedType(item) {
     group_created: "创建群组",
     group_updated: "更新群组",
     invite_code_refreshed: "刷新邀请码",
+    member_reminded: "提醒打卡",
   };
   return labels[item.event_type] || "监督动态";
 }
@@ -690,6 +711,20 @@ async function updateGroup(options) {
   }
 }
 
+async function remindMember(targetUserId) {
+  try {
+    const result = await api("/groups/remind", {
+      method: "POST",
+      body: JSON.stringify({ target_user_id: Number(targetUserId) }),
+    });
+    showToast(`已提醒 ${result.target_nickname} 去打卡`);
+    await refreshAll();
+    switchPage("challenge");
+  } catch (error) {
+    await handleActionError(error);
+  }
+}
+
 function registerEvents() {
   document.querySelectorAll(".nav-item").forEach((item) => {
     item.addEventListener("click", () => switchPage(item.dataset.target));
@@ -724,6 +759,11 @@ function registerEvents() {
     } catch (error) {
       await handleActionError(error);
     }
+  });
+  el.memberList.addEventListener("click", async (event) => {
+    const remindButton = event.target.closest("[data-remind-user-id]");
+    if (!remindButton) return;
+    await remindMember(remindButton.dataset.remindUserId);
   });
   el.homeSupervisionPanel.addEventListener("click", async (event) => {
     const actionTarget = event.target.closest("[data-home-action]");

@@ -59,6 +59,10 @@ class GroupUpdatePayload(BaseModel):
     refresh_invite_code: bool = False
 
 
+class GroupRemindPayload(BaseModel):
+    target_user_id: int
+
+
 @contextmanager
 def get_db() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
@@ -153,6 +157,7 @@ init_db()
 
 def serialize_profile(row: sqlite3.Row) -> dict[str, Any]:
     return {
+        "user_id": row["id"],
         "nickname": row["nickname"],
         "avatar_emoji": row["avatar_emoji"],
         "sober_start_date": row["sober_start_date"],
@@ -227,6 +232,18 @@ def require_group_owner(conn: sqlite3.Connection, group_id: int, user_id: int) -
         raise HTTPException(status_code=404, detail="当前账号未加入监督群组")
     if row["role"] != "owner":
         raise HTTPException(status_code=403, detail="只有群主可以修改群组")
+
+
+def find_group_member(conn: sqlite3.Connection, group_id: int, user_id: int) -> sqlite3.Row | None:
+    return conn.execute(
+        """
+        SELECT gm.role, u.nickname, u.avatar_emoji
+        FROM group_members gm
+        JOIN users u ON u.id = gm.user_id
+        WHERE gm.group_id = ? AND gm.user_id = ?
+        """,
+        (group_id, user_id),
+    ).fetchone()
 
 
 def create_feed_event(
@@ -540,6 +557,75 @@ def update_current_group(payload: GroupUpdatePayload, user: dict[str, Any] = Dep
     return {"group": {"name": group_name, "invite_code": invite_code}}
 
 
+@app.post("/api/groups/remind")
+def remind_group_member(payload: GroupRemindPayload, user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
+    today = date.today().isoformat()
+    with get_db() as conn:
+        group = ensure_group_membership(conn, user["user_id"])
+        if not group:
+            raise HTTPException(status_code=404, detail="当前账号未加入监督群组")
+        if payload.target_user_id == user["user_id"]:
+            raise HTTPException(status_code=422, detail="不能提醒自己")
+
+        target_member = find_group_member(conn, group["id"], payload.target_user_id)
+        if not target_member:
+            raise HTTPException(status_code=404, detail="提醒对象不在当前群组中")
+
+        checked_in_today = conn.execute(
+            """
+            SELECT 1
+            FROM checkins
+            WHERE user_id = ? AND checkin_date = ?
+            """,
+            (payload.target_user_id, today),
+        ).fetchone()
+        if checked_in_today:
+            raise HTTPException(status_code=409, detail="对方今天已经打卡")
+
+        used_today = conn.execute(
+            """
+            SELECT id
+            FROM feed_events
+            WHERE group_id = ? AND actor_user_id = ? AND event_type = 'member_reminded'
+              AND substr(created_at, 1, 10) = ?
+            LIMIT 1
+            """,
+            (group["id"], user["user_id"], today),
+        ).fetchone()
+        if used_today:
+            raise HTTPException(status_code=409, detail="今天你已经提醒过一次了")
+
+        create_feed_event(
+            conn,
+            group["id"],
+            user["user_id"],
+            "member_reminded",
+            {
+                "target_user_id": payload.target_user_id,
+                "target_nickname": target_member["nickname"],
+            },
+        )
+
+        remaining_pending_count = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM group_members gm
+            LEFT JOIN checkins c
+              ON c.user_id = gm.user_id
+             AND c.checkin_date = ?
+            WHERE gm.group_id = ? AND c.id IS NULL
+            """,
+            (today, group["id"]),
+        ).fetchone()[0]
+
+    return {
+        "target_user_id": payload.target_user_id,
+        "target_nickname": target_member["nickname"],
+        "remaining_pending_count": remaining_pending_count,
+        "created_at": now_iso(),
+    }
+
+
 @app.get("/api/groups/current")
 def current_group(user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
     today = date.today().isoformat()
@@ -547,6 +633,30 @@ def current_group(user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
         group = ensure_group_membership(conn, user["user_id"])
         if not group:
             return {"group": None, "members": []}
+
+        reminder_used_today = conn.execute(
+            """
+            SELECT payload_json
+            FROM feed_events
+            WHERE group_id = ? AND actor_user_id = ? AND event_type = 'member_reminded'
+              AND substr(created_at, 1, 10) = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (group["id"], user["user_id"], today),
+        ).fetchone()
+
+        incoming_reminder_rows = conn.execute(
+            """
+            SELECT f.created_at, f.payload_json, u.nickname
+            FROM feed_events f
+            JOIN users u ON u.id = f.actor_user_id
+            WHERE f.group_id = ? AND f.event_type = 'member_reminded'
+              AND substr(f.created_at, 1, 10) = ?
+            ORDER BY f.id DESC
+            """,
+            (group["id"], today),
+        ).fetchall()
 
         rows = conn.execute(
             """
@@ -604,8 +714,29 @@ def current_group(user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
             viewer_role = member["role"]
             break
 
+    reminder_target_user_id = None
+    if reminder_used_today:
+        reminder_target_user_id = json.loads(reminder_used_today["payload_json"]).get("target_user_id")
+
+    incoming_reminder = None
+    for row in incoming_reminder_rows:
+        payload_json = json.loads(row["payload_json"])
+        if payload_json.get("target_user_id") == user["user_id"]:
+            incoming_reminder = {
+                "actor_nickname": row["nickname"],
+                "created_at": row["created_at"],
+            }
+            break
+
     return {
-        "group": {"name": group["name"], "invite_code": group["invite_code"], "viewer_role": viewer_role},
+        "group": {
+            "name": group["name"],
+            "invite_code": group["invite_code"],
+            "viewer_role": viewer_role,
+            "reminder_used_today": bool(reminder_used_today),
+            "reminder_target_user_id": reminder_target_user_id,
+            "incoming_reminder": incoming_reminder,
+        },
         "members": members,
     }
 

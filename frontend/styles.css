@@ -590,6 +590,26 @@ body {
   gap: 10px;
 }
 
+.incoming-reminder {
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255, 236, 236, 0.92);
+  border: 1px solid rgba(240, 108, 108, 0.18);
+}
+
+.incoming-reminder-title {
+  color: var(--warn);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.incoming-reminder-note {
+  margin-top: 4px;
+  color: #8c5757;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .supervision-main {
   display: flex;
   justify-content: space-between;
@@ -1284,6 +1304,25 @@ textarea {
 .feed-body {
   margin-top: 8px;
   line-height: 1.5;
+}
+
+.member-card-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.remind-btn {
+  min-width: 84px;
+}
+
+.remind-btn.is-disabled,
+.remind-btn:disabled {
+  background: rgba(255, 236, 236, 0.96);
+  color: var(--warn);
+  border-color: rgba(240, 108, 108, 0.18);
+  cursor: not-allowed;
+  opacity: 1;
 }
 
 .feed-empty {
