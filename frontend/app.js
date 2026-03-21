@@ -268,13 +268,13 @@ function triggerHomeCelebration() {
 }
 
 function renderHome() {
-  const soberDays = state.summary?.sober_days ?? 1;
+  const streakDays = state.summary?.streak_days ?? 0;
   const checkedIn = state.today?.checked_in;
   const uiState = checkedIn ? "completed" : state.checkinUiState;
   el.todayLabel.textContent = formatDateLabel();
-  el.homeGreeting.textContent = `你已坚持戒酒第 ${soberDays} 天`;
-  el.soberDaysHero.textContent = soberDays;
-  el.soberDaysValue.textContent = soberDays;
+  el.homeGreeting.textContent = `你已连续打卡 ${streakDays} 天`;
+  el.soberDaysHero.textContent = streakDays;
+  el.soberDaysValue.textContent = streakDays;
   el.savedAmountValue.textContent = formatMoney(state.summary?.saved_amount ?? 0);
   el.totalCheckinsValue.textContent = state.summary?.total_checkins ?? 0;
   el.dailyBudgetValue.textContent = formatMoney(state.summary?.daily_budget ?? 0);
@@ -332,7 +332,7 @@ function renderHomeSupervision() {
   }
 
   const members = [...(state.members || [])].sort((a, b) => {
-    if (a.checked_in_today === b.checked_in_today) return a.sober_days - b.sober_days;
+    if (a.checked_in_today === b.checked_in_today) return b.streak_days - a.streak_days;
     return a.checked_in_today ? 1 : -1;
   });
   const pending = pendingCount(members);
@@ -357,7 +357,7 @@ function renderHomeSupervision() {
                   ${member.checked_in_today ? "" : '<span class="member-alert-dot"></span>'}
                   <div>
                     <div class="member-chip-name">${member.avatar_emoji} ${member.nickname}</div>
-                    <div class="member-chip-meta">已坚持 ${member.sober_days} 天</div>
+                    <div class="member-chip-meta">连续打卡 ${member.streak_days} 天</div>
                   </div>
                 </div>
                 <div class="member-chip-status ${member.checked_in_today ? "" : "pending"}">
@@ -435,7 +435,7 @@ function renderGroup() {
       </div>
       <div class="group-card-meta">
         <span class="meta-pill">成员 ${state.members.length} 人</span>
-        <span class="meta-pill">${pendingCount(state.members)} 人待打卡</span>
+        <span class="meta-pill ${pendingCount(state.members) > 0 ? "is-pending" : ""}">${pendingCount(state.members)} 人待打卡</span>
       </div>
     </div>
   `;
@@ -452,9 +452,9 @@ function renderGroup() {
           <div class="member-card-top">
             <div>
               <div class="member-name">${member.avatar_emoji} ${member.nickname}</div>
-              <div class="member-meta">${member.role === "owner" ? "群主" : "成员"} · 已坚持 ${member.sober_days} 天</div>
+              <div class="member-meta">${member.role === "owner" ? "群主" : "成员"} · 连续打卡 ${member.streak_days} 天</div>
             </div>
-            <div class="member-meta">${member.checked_in_today ? "今日已打卡" : "今日待打卡"}</div>
+            <div class="member-meta ${member.checked_in_today ? "" : "is-pending"}">${member.checked_in_today ? "今日已打卡" : "今日待打卡"}</div>
           </div>
           <p>最近状态：${member.latest_mood || "尚未打卡"} ${member.latest_reflection ? `· ${member.latest_reflection}` : ""}</p>
           <p>累计节省：${formatMoney(member.saved_amount)}</p>
@@ -510,7 +510,7 @@ function renderFeed() {
 
 function renderProfileSummary() {
   el.profileSoberDaysValue.textContent = `${state.summary?.sober_days ?? 0} 天`;
-  el.profileCheckinsValue.textContent = `${state.summary?.total_checkins ?? 0} 次`;
+  el.profileCheckinsValue.textContent = `${state.summary?.streak_days ?? 0} 天`;
   el.profileSavedAmountValue.textContent = formatMoney(state.summary?.saved_amount ?? 0);
 
   if (!state.group) {
@@ -529,7 +529,7 @@ function renderProfileSummary() {
       </div>
       <div class="profile-group-meta">
         <span class="meta-pill">成员 ${state.members.length} 人</span>
-        <span class="meta-pill">${pendingCount(state.members)} 人待打卡</span>
+        <span class="meta-pill ${pendingCount(state.members) > 0 ? "is-pending" : ""}">${pendingCount(state.members)} 人待打卡</span>
       </div>
       <button class="secondary-btn" type="button" data-profile-action="open-challenge">前往群组</button>
     </div>

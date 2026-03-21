@@ -165,6 +165,16 @@ def compute_sober_days(start_date_str: str) -> int:
     return max((date.today() - start).days + 1, 1)
 
 
+def compute_streak_days(checkin_dates: list[str], today: date | None = None) -> int:
+    current = today or date.today()
+    history = {date.fromisoformat(item) for item in checkin_dates}
+    streak = 0
+    while current in history:
+        streak += 1
+        current -= timedelta(days=1)
+    return streak
+
+
 def get_user_row(conn: sqlite3.Connection, user_id: int) -> sqlite3.Row:
     row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
     if not row:
@@ -391,6 +401,18 @@ def stats_summary(user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
             "SELECT COUNT(*) AS count FROM checkins WHERE user_id = ?",
             (user["user_id"],),
         ).fetchone()["count"]
+        all_checkin_dates = [
+            row["checkin_date"]
+            for row in conn.execute(
+                """
+                SELECT checkin_date
+                FROM checkins
+                WHERE user_id = ?
+                ORDER BY checkin_date DESC
+                """,
+                (user["user_id"],),
+            ).fetchall()
+        ]
         last_checkins = conn.execute(
             """
             SELECT checkin_date, mood
@@ -404,6 +426,7 @@ def stats_summary(user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
     daily_budget = float(profile["daily_budget"])
     return {
         "sober_days": compute_sober_days(profile["sober_start_date"]),
+        "streak_days": compute_streak_days(all_checkin_dates),
         "total_checkins": total_checkins,
         "saved_amount": round(total_checkins * daily_budget, 2),
         "daily_budget": daily_budget,
@@ -537,7 +560,12 @@ def current_group(user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
                 c.checkin_date,
                 c.mood,
                 c.reflection,
-                (SELECT COUNT(*) FROM checkins ck WHERE ck.user_id = u.id) AS total_checkins
+                (SELECT COUNT(*) FROM checkins ck WHERE ck.user_id = u.id) AS total_checkins,
+                (
+                    SELECT GROUP_CONCAT(ck2.checkin_date)
+                    FROM checkins ck2
+                    WHERE ck2.user_id = u.id
+                ) AS checkin_date_history
             FROM group_members gm
             JOIN users u ON u.id = gm.user_id
             LEFT JOIN checkins c
@@ -560,6 +588,9 @@ def current_group(user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
                 "avatar_emoji": row["avatar_emoji"],
                 "role": row["role"],
                 "sober_days": compute_sober_days(row["sober_start_date"]),
+                "streak_days": compute_streak_days(
+                    [item for item in (row["checkin_date_history"] or "").split(",") if item],
+                ),
                 "checked_in_today": row["checkin_date"] == today,
                 "latest_mood": row["mood"],
                 "latest_reflection": row["reflection"] or "",

@@ -681,7 +681,7 @@ body {
 }
 
 .member-chip-status.pending {
-  color: #b05d5d;
+  color: var(--warn);
 }
 
 .supervision-empty {
@@ -877,6 +877,11 @@ textarea {
   color: var(--muted);
   font-size: 12px;
   font-weight: 600;
+}
+
+.member-meta.is-pending {
+  color: var(--warn);
+  font-weight: 700;
 }
 
 .metric-card strong,
@@ -1258,6 +1263,11 @@ textarea {
   color: var(--accent-deep);
   font-size: 12px;
   font-weight: 700;
+}
+
+.meta-pill.is-pending {
+  background: rgba(255, 236, 236, 0.96);
+  color: var(--warn);
 }
 
 .feed-badge {

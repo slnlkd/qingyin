@@ -8,9 +8,9 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>清饮 Qingyin</title>
-    <link rel="icon" href="./assets/favicon.svg?v=20260320u" type="image/svg+xml" />
-    <link rel="manifest" href="./manifest.webmanifest?v=20260320u" />
-    <link rel="stylesheet" href="./styles.css?v=20260320u" />
+    <link rel="icon" href="./assets/favicon.svg?v=20260321a" type="image/svg+xml" />
+    <link rel="manifest" href="./manifest.webmanifest?v=20260321a" />
+    <link rel="stylesheet" href="./styles.css?v=20260321a" />
   </head>
   <body>
     <div class="scene-leaf scene-leaf-left"></div>
@@ -33,7 +33,7 @@
         <div class="content-scroll">
           <section class="page is-active" data-page="home">
             <section class="hero-card">
-              <p class="hero-subtitle" id="homeGreeting">你已坚持戒酒第 1 天</p>
+              <p class="hero-subtitle" id="homeGreeting">你已连续打卡 0 天</p>
               <div class="hero-days" id="soberDaysHero">1</div>
               <p class="hero-date" id="todayLabel"></p>
               <button class="checkin-ring is-actionable" id="checkinRing" type="button" aria-label="点击今日打卡">
@@ -75,7 +75,7 @@
                   </svg>
                 </div>
                 <div class="metric-body">
-                  <span class="metric-label">坚持天数</span>
+                  <span class="metric-label">连续打卡</span>
                   <strong id="soberDaysValue">1</strong>
                 </div>
               </article>
@@ -211,12 +211,12 @@
               </div>
               <div class="summary-stack profile-summary-stack">
                 <article class="summary-card profile-status-card">
-                  <span>连续戒酒</span>
+                  <span>戒酒总天数</span>
                   <strong id="profileSoberDaysValue">0 天</strong>
                 </article>
                 <article class="summary-card profile-status-card">
-                  <span>累计签到</span>
-                  <strong id="profileCheckinsValue">0 次</strong>
+                  <span>连续打卡</span>
+                  <strong id="profileCheckinsValue">0 天</strong>
                 </article>
                 <article class="summary-card profile-status-card">
                   <span>节省金额</span>
@@ -305,6 +305,6 @@
     </main>
 
     <div id="toast" class="toast"></div>
-    <script src="./app.js?v=20260320u" type="module"></script>
+    <script src="./app.js?v=20260321a" type="module"></script>
   </body>
 </html>
