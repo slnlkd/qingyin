@@ -1214,28 +1214,37 @@ textarea {
   margin-top: 14px;
 }
 
-.profile-summary-stack {
+.profile-overview-card {
+  margin-top: 4px;
+  display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 0;
+  padding: 8px;
 }
 
-.profile-status-card {
-  padding: 12px 10px 13px;
-  min-height: 84px;
-  justify-content: center;
-  align-items: center;
+.profile-overview-item {
+  min-width: 0;
+  padding: 10px 8px;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
   text-align: center;
-  gap: 6px;
 }
 
-.profile-status-card strong {
-  font-size: 18px;
-  white-space: nowrap;
-  line-height: 1;
+.profile-overview-item + .profile-overview-item {
+  border-left: 1px solid rgba(121, 157, 144, 0.12);
 }
 
-.profile-status-card span {
+.profile-overview-item span {
   font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.profile-overview-item strong {
+  font-size: 18px;
+  line-height: 1;
   white-space: nowrap;
 }
 
@@ -1298,12 +1307,76 @@ textarea {
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-icon {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2;
+  flex: none;
 }
 
 .member-card p,
 .feed-body {
   margin-top: 8px;
   line-height: 1.5;
+}
+
+.status-chip {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.status-chip.is-checked {
+  background: rgba(227, 247, 238, 0.92);
+  color: var(--accent-deep);
+}
+
+.status-chip.is-pending,
+.status-chip.is-reminded {
+  background: rgba(255, 236, 236, 0.96);
+  color: var(--warn);
+}
+
+.member-state-row {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.member-state-row .mood-chip-icon,
+.member-state-row .status-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.member-state-row em {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member-state-row.is-empty {
+  color: var(--muted);
 }
 
 .member-card-actions {

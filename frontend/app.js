@@ -197,6 +197,83 @@ function moodIcon(name) {
   return icons[name] || icons.plain;
 }
 
+function statusIcon(name) {
+  const icons = {
+    checked: `
+      <svg class="ui-icon status-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M8.5 12.2 10.9 14.6 15.8 9.8"></path>
+      </svg>`,
+    pending: `
+      <svg class="ui-icon status-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M12 8v4.6"></path>
+        <path d="M12 16.6h.01"></path>
+      </svg>`,
+    reminded: `
+      <svg class="ui-icon status-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 4.5a4.6 4.6 0 0 1 4.6 4.6v2.1c0 .8.2 1.5.7 2.2l1 1.4H5.7l1-1.4c.5-.7.7-1.4.7-2.2V9.1A4.6 4.6 0 0 1 12 4.5"></path>
+        <path d="M10.2 18a2 2 0 0 0 3.6 0"></path>
+      </svg>`,
+  };
+  return icons[name] || icons.pending;
+}
+
+function eventTypeIcon(type) {
+  const icons = {
+    checkin: statusIcon("checked"),
+    member_joined: `
+      <svg class="ui-icon status-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="9" cy="9" r="3.2"></circle>
+        <path d="M4.8 18c.9-2.6 2.4-4 4.2-4s3.3 1.4 4.2 4"></path>
+        <path d="M16 8.5h4"></path>
+        <path d="M18 6.5v4"></path>
+      </svg>`,
+    group_created: `
+      <svg class="ui-icon status-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 7.5h14"></path>
+        <path d="M5 12h14"></path>
+        <path d="M5 16.5h9"></path>
+      </svg>`,
+    group_updated: `
+      <svg class="ui-icon status-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 17.5h3l7.8-7.8a1.6 1.6 0 0 0-2.3-2.3L6.7 15.2v2.3Z"></path>
+        <path d="m13.7 8.2 2.3 2.3"></path>
+      </svg>`,
+    invite_code_refreshed: `
+      <svg class="ui-icon status-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M17.8 8.2A6.5 6.5 0 1 0 18.5 14"></path>
+        <path d="M18.5 5.8v4h-4"></path>
+      </svg>`,
+    member_reminded: statusIcon("reminded"),
+  };
+  return icons[type] || statusIcon("pending");
+}
+
+function memberStatusChip(member) {
+  if (member.checked_in_today) {
+    return `<div class="status-chip is-checked">${statusIcon("checked")}<span>今日已打卡</span></div>`;
+  }
+  if (state.group?.reminder_target_user_id === member.user_id) {
+    return `<div class="status-chip is-reminded">${statusIcon("reminded")}<span>今日已提醒</span></div>`;
+  }
+  return `<div class="status-chip is-pending">${statusIcon("pending")}<span>今日待打卡</span></div>`;
+}
+
+function memberLatestState(member) {
+  if (!member.latest_mood) {
+    return `<div class="member-state-row is-empty">${statusIcon("pending")}<span>今天还没有留下状态</span></div>`;
+  }
+  const mood = moodMap.find((entry) => entry.label === member.latest_mood) || moodMap[2];
+  return `
+    <div class="member-state-row">
+      ${moodIcon(mood.icon)}
+      <span>${member.latest_mood}</span>
+      <em>${member.latest_reflection ? escapeHtml(member.latest_reflection) : "今天的状态已更新"}</em>
+    </div>
+  `;
+}
+
 async function api(path, options = {}, hasRetried = false) {
   const headers = new Headers(options.headers || {});
   if (state.token) headers.set("X-Session-Token", state.token);
@@ -464,9 +541,9 @@ function renderGroup() {
               <div class="member-name">${member.avatar_emoji} ${member.nickname}</div>
               <div class="member-meta">${member.role === "owner" ? "群主" : "成员"} · 连续打卡 ${member.streak_days} 天</div>
             </div>
-            <div class="member-meta ${member.checked_in_today ? "" : "is-pending"}">${member.checked_in_today ? "今日已打卡" : "今日待打卡"}</div>
+            ${memberStatusChip(member)}
           </div>
-          <p>最近状态：${member.latest_mood || "尚未打卡"} ${member.latest_reflection ? `· ${member.latest_reflection}` : ""}</p>
+          ${memberLatestState(member)}
           <p>累计节省：${formatMoney(member.saved_amount)}</p>
           ${
             member.user_id !== state.profile?.user_id && !member.checked_in_today
@@ -520,7 +597,7 @@ function renderFeed() {
               <div class="feed-name">${item.avatar_emoji} ${item.nickname}</div>
               <div class="feed-meta">${formatFeedTime(item.created_at)}</div>
             </div>
-            <div class="feed-badge">${formatFeedType(item)}</div>
+            <div class="feed-badge">${eventTypeIcon(item.event_type)}<span>${formatFeedType(item)}</span></div>
           </div>
           <div class="feed-body">${escapeHtml(formatFeedItem(item))}</div>
         </article>
