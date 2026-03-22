@@ -8,6 +8,12 @@
 - 已支持监督群组内的手动催打卡提醒
 - 已区分 `戒酒总天数` 与 `连续打卡天数`
 
+## 项目地址
+
+- 线上体验：`https://lvkedang.cn/qingyin/`
+- API：`https://lvkedang.cn/qingyin-api/`
+- GitHub：`https://github.com/slnlkd/qingyin`
+
 ## 最近更新
 
 - 首页主视觉改为点击圆环直接打卡，并补充了更完整的成功动效与联动反馈
@@ -116,11 +122,6 @@ docker compose down
 - `POST /api/groups/remind`
 - `GET /api/groups/current`
 - `GET /api/groups/feed`
-
-## 当前线上部署
-
-- 页面：`https://lvkedang.cn/qingyin/`
-- API：`https://lvkedang.cn/qingyin-api/`
 
 ## 部署建议
 
