@@ -9,6 +9,8 @@ services:
       - ./backend-data:/app/backend-data
     environment:
       QINGYIN_DB_PATH: /app/backend-data/qingyin.db
+      WECHAT_MINI_APPID: ${WECHAT_MINI_APPID:-}
+      WECHAT_MINI_SECRET: ${WECHAT_MINI_SECRET:-}
     ports:
       - "127.0.0.1:18081:8000"
 

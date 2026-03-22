@@ -1214,6 +1214,17 @@ textarea {
   margin-top: 14px;
 }
 
+.auth-card {
+  margin-top: 14px;
+}
+
+.auth-card-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .profile-overview-card {
   margin-top: 4px;
   display: grid;

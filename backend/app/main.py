@@ -8,6 +8,9 @@ from contextlib import contextmanager
 from datetime import UTC, date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from urllib.error import URLError
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,6 +21,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = Path(os.getenv("QINGYIN_DB_PATH", str(BASE_DIR / "qingyin.db")))
 MOODS = ["开心", "平静", "一般", "渴望", "不适"]
 APP_TZ = timezone(timedelta(hours=8))
+DEFAULT_NICKNAME = "清饮用户"
+DEFAULT_AVATAR = "🌿"
+DEFAULT_DAILY_BUDGET = 48
+WECHAT_PROVIDER = "wechat_mini"
 
 
 app = FastAPI(title="Qingyin API", version="0.1.0")
@@ -61,6 +68,10 @@ class GroupUpdatePayload(BaseModel):
 
 class GroupRemindPayload(BaseModel):
     target_user_id: int
+
+
+class WechatMiniLoginPayload(BaseModel):
+    code: str = Field(min_length=1, max_length=128)
 
 
 @contextmanager
@@ -148,6 +159,19 @@ def init_db() -> None:
                 FOREIGN KEY (group_id) REFERENCES supervision_groups (id) ON DELETE CASCADE,
                 FOREIGN KEY (actor_user_id) REFERENCES users (id) ON DELETE CASCADE
             );
+
+            CREATE TABLE IF NOT EXISTS user_auth_identities (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                provider TEXT NOT NULL,
+                provider_user_id TEXT NOT NULL,
+                union_id TEXT,
+                created_at TEXT NOT NULL,
+                last_login_at TEXT NOT NULL,
+                UNIQUE(provider, provider_user_id),
+                UNIQUE(provider, user_id),
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+            );
             """
         )
 
@@ -187,14 +211,143 @@ def get_user_row(conn: sqlite3.Connection, user_id: int) -> sqlite3.Row:
     return row
 
 
+def get_session_row(conn: sqlite3.Connection, token: str) -> sqlite3.Row | None:
+    return conn.execute(
+        "SELECT * FROM sessions WHERE token = ?",
+        (token,),
+    ).fetchone()
+
+
+def create_user(conn: sqlite3.Connection) -> int:
+    created_at = now_iso()
+    cursor = conn.execute(
+        """
+        INSERT INTO users (nickname, avatar_emoji, sober_start_date, daily_budget, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (DEFAULT_NICKNAME, DEFAULT_AVATAR, date.today().isoformat(), DEFAULT_DAILY_BUDGET, created_at),
+    )
+    return int(cursor.lastrowid)
+
+
+def create_session(conn: sqlite3.Connection, user_id: int) -> str:
+    token = secrets.token_urlsafe(24)
+    created_at = now_iso()
+    conn.execute(
+        """
+        INSERT INTO sessions (token, user_id, created_at, last_seen_at)
+        VALUES (?, ?, ?, ?)
+        """,
+        (token, user_id, created_at, created_at),
+    )
+    return token
+
+
+def get_auth_identity_by_user(conn: sqlite3.Connection, user_id: int, provider: str = WECHAT_PROVIDER) -> sqlite3.Row | None:
+    return conn.execute(
+        """
+        SELECT *
+        FROM user_auth_identities
+        WHERE user_id = ? AND provider = ?
+        LIMIT 1
+        """,
+        (user_id, provider),
+    ).fetchone()
+
+
+def get_auth_identity_by_provider_user_id(
+    conn: sqlite3.Connection,
+    provider_user_id: str,
+    provider: str = WECHAT_PROVIDER,
+) -> sqlite3.Row | None:
+    return conn.execute(
+        """
+        SELECT *
+        FROM user_auth_identities
+        WHERE provider = ? AND provider_user_id = ?
+        LIMIT 1
+        """,
+        (provider, provider_user_id),
+    ).fetchone()
+
+
+def mask_provider_user_id(value: str | None) -> str | None:
+    if not value:
+        return None
+    if len(value) <= 8:
+        return value[:2] + "***"
+    return f"{value[:4]}***{value[-4:]}"
+
+
+def serialize_auth_status(identity: sqlite3.Row | None) -> dict[str, Any]:
+    return {
+        "bound": bool(identity),
+        "provider": WECHAT_PROVIDER,
+        "provider_label": "微信小程序",
+        "openid_masked": mask_provider_user_id(identity["provider_user_id"]) if identity else None,
+        "union_id_bound": bool(identity and identity["union_id"]),
+        "login_ready": bool(os.getenv("WECHAT_MINI_APPID") and os.getenv("WECHAT_MINI_SECRET")),
+    }
+
+
+def user_has_meaningful_data(conn: sqlite3.Connection, user_id: int) -> bool:
+    user = get_user_row(conn, user_id)
+    if (
+        user["nickname"] != DEFAULT_NICKNAME
+        or user["avatar_emoji"] != DEFAULT_AVATAR
+        or user["sober_start_date"] != date.today().isoformat()
+        or float(user["daily_budget"]) != float(DEFAULT_DAILY_BUDGET)
+    ):
+        return True
+    has_checkins = conn.execute(
+        "SELECT 1 FROM checkins WHERE user_id = ? LIMIT 1",
+        (user_id,),
+    ).fetchone()
+    if has_checkins:
+        return True
+    has_group = conn.execute(
+        "SELECT 1 FROM group_members WHERE user_id = ? LIMIT 1",
+        (user_id,),
+    ).fetchone()
+    return bool(has_group)
+
+
+def exchange_wechat_mini_code(code: str) -> dict[str, Any]:
+    appid = (os.getenv("WECHAT_MINI_APPID") or "").strip()
+    secret = (os.getenv("WECHAT_MINI_SECRET") or "").strip()
+    if not appid or not secret:
+        raise HTTPException(status_code=503, detail="服务端尚未配置微信小程序登录")
+
+    url = "https://api.weixin.qq.com/sns/jscode2session?" + urlencode(
+        {
+            "appid": appid,
+            "secret": secret,
+            "js_code": code,
+            "grant_type": "authorization_code",
+        }
+    )
+
+    try:
+        with urlopen(url, timeout=10) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except URLError as error:
+        raise HTTPException(status_code=502, detail=f"微信登录请求失败：{error.reason}") from error
+
+    if payload.get("errcode"):
+        raise HTTPException(
+            status_code=502,
+            detail=f"微信登录失败：{payload.get('errmsg') or payload['errcode']}",
+        )
+    if not payload.get("openid"):
+        raise HTTPException(status_code=502, detail="微信登录失败：未返回 openid")
+    return payload
+
+
 def auth_user(x_session_token: str | None = Header(default=None)) -> dict[str, Any]:
     if not x_session_token:
         raise HTTPException(status_code=401, detail="缺少会话令牌")
     with get_db() as conn:
-        session = conn.execute(
-            "SELECT * FROM sessions WHERE token = ?",
-            (x_session_token,),
-        ).fetchone()
+        session = get_session_row(conn, x_session_token)
         if not session:
             raise HTTPException(status_code=401, detail="无效会话")
         conn.execute(
@@ -274,26 +427,95 @@ def health() -> dict[str, str]:
 
 @app.post("/api/session/init", response_model=SessionInitResponse)
 def session_init() -> SessionInitResponse:
-    token = secrets.token_urlsafe(24)
-    created_at = now_iso()
     with get_db() as conn:
-        cursor = conn.execute(
-            """
-            INSERT INTO users (nickname, avatar_emoji, sober_start_date, daily_budget, created_at)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            ("清饮用户", "🌿", date.today().isoformat(), 48, created_at),
-        )
-        user_id = cursor.lastrowid
-        conn.execute(
-            """
-            INSERT INTO sessions (token, user_id, created_at, last_seen_at)
-            VALUES (?, ?, ?, ?)
-            """,
-            (token, user_id, created_at, created_at),
-        )
+        user_id = create_user(conn)
+        token = create_session(conn, user_id)
         user = get_user_row(conn, user_id)
     return SessionInitResponse(token=token, profile=serialize_profile(user))
+
+
+@app.get("/api/auth/me")
+def get_auth_me(user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
+    with get_db() as conn:
+        identity = get_auth_identity_by_user(conn, user["user_id"])
+    return serialize_auth_status(identity)
+
+
+@app.post("/api/auth/wechat/mini/login")
+def auth_wechat_mini_login(
+    payload: WechatMiniLoginPayload,
+    x_session_token: str | None = Header(default=None),
+) -> dict[str, Any]:
+    wechat_result = exchange_wechat_mini_code(payload.code.strip())
+    openid = wechat_result["openid"]
+    union_id = wechat_result.get("unionid")
+    now = now_iso()
+
+    with get_db() as conn:
+        current_session = get_session_row(conn, x_session_token) if x_session_token else None
+        current_user = get_user_row(conn, current_session["user_id"]) if current_session else None
+        identity = get_auth_identity_by_provider_user_id(conn, openid)
+
+        if identity:
+            conn.execute(
+                """
+                UPDATE user_auth_identities
+                SET union_id = COALESCE(?, union_id), last_login_at = ?
+                WHERE id = ?
+                """,
+                (union_id, now, identity["id"]),
+            )
+            target_user_id = int(identity["user_id"])
+            if current_user and current_user["id"] != target_user_id:
+                if user_has_meaningful_data(conn, current_user["id"]):
+                    raise HTTPException(
+                        status_code=409,
+                        detail="该微信账号已绑定其他清饮账号，当前设备已有数据，暂不支持自动合并",
+                    )
+                conn.execute(
+                    "UPDATE sessions SET user_id = ?, last_seen_at = ? WHERE id = ?",
+                    (target_user_id, now, current_session["id"]),
+                )
+                token = current_session["token"]
+                bind_mode = "restored_existing"
+            elif current_session:
+                conn.execute(
+                    "UPDATE sessions SET last_seen_at = ? WHERE id = ?",
+                    (now, current_session["id"]),
+                )
+                token = current_session["token"]
+                bind_mode = "already_bound"
+            else:
+                token = create_session(conn, target_user_id)
+                bind_mode = "restored_existing"
+        else:
+            if current_user:
+                target_user_id = int(current_user["id"])
+                token = current_session["token"]
+                bind_mode = "bound_current"
+            else:
+                target_user_id = create_user(conn)
+                token = create_session(conn, target_user_id)
+                bind_mode = "created_new"
+            conn.execute(
+                """
+                INSERT INTO user_auth_identities (
+                    user_id, provider, provider_user_id, union_id, created_at, last_login_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (target_user_id, WECHAT_PROVIDER, openid, union_id, now, now),
+            )
+
+        user = get_user_row(conn, target_user_id)
+        auth_status = serialize_auth_status(get_auth_identity_by_user(conn, target_user_id))
+
+    return {
+        "token": token,
+        "profile": serialize_profile(user),
+        "auth": auth_status,
+        "bind_mode": bind_mode,
+    }
 
 
 @app.get("/api/profile")

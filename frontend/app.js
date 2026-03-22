@@ -17,6 +17,7 @@ const moodMap = [
 const state = {
   token: localStorage.getItem(TOKEN_KEY) || "",
   profile: null,
+  auth: null,
   today: null,
   summary: null,
   calendar: [],
@@ -74,6 +75,7 @@ const el = {
   profileSoberDaysValue: document.querySelector("#profileSoberDaysValue"),
   profileCheckinsValue: document.querySelector("#profileCheckinsValue"),
   profileSavedAmountValue: document.querySelector("#profileSavedAmountValue"),
+  authCard: document.querySelector("#authCard"),
   profileGroupCard: document.querySelector("#profileGroupCard"),
   refreshProfileButton: document.querySelector("#refreshProfileButton"),
   profileShortcut: document.querySelector("#profileShortcut"),
@@ -657,6 +659,38 @@ function renderProfileSummary() {
   `;
 }
 
+function renderAuthStatus() {
+  if (!state.auth) {
+    el.authCard.innerHTML = "<p>正在读取账号状态。</p>";
+    return;
+  }
+
+  if (state.auth.bound) {
+    el.authCard.innerHTML = `
+      <div class="auth-card-main">
+        <div>
+          <div class="member-name">已绑定微信小程序账号</div>
+          <div class="group-meta">账号标识：${state.auth.openid_masked || "已绑定"}</div>
+        </div>
+        <div class="meta-pill">已绑定</div>
+      </div>
+      <p>后续你可以直接在微信小程序中登录，并恢复当前资料、打卡记录和监督群组关系。</p>
+    `;
+    return;
+  }
+
+  el.authCard.innerHTML = `
+    <div class="auth-card-main">
+      <div>
+        <div class="member-name">未绑定微信小程序账号</div>
+        <div class="group-meta">${state.auth.login_ready ? "微信登录服务已就绪" : "服务端尚未配置微信登录"}</div>
+      </div>
+      <div class="meta-pill ${state.auth.login_ready ? "" : "is-pending"}">${state.auth.login_ready ? "可绑定" : "未就绪"}</div>
+    </div>
+    <p>当前仍是本地会话。后续在微信小程序首次登录时，可将当前设备上的资料与监督关系绑定为正式账号。</p>
+  `;
+}
+
 function fillProfileForm() {
   if (!state.profile) return;
   el.profileForm.elements.nickname.value = state.profile.nickname;
@@ -684,8 +718,9 @@ async function initSession() {
 
 async function refreshAll() {
   if (!state.token) await initSession();
-  const [profile, today, summary, calendar, currentGroup, feed] = await Promise.all([
+  const [profile, auth, today, summary, calendar, currentGroup, feed] = await Promise.all([
     api("/profile"),
+    api("/auth/me"),
     api("/checkins/today"),
     api("/stats/summary"),
     api(`/checkins/calendar?month=${state.calendarMonth}`),
@@ -693,6 +728,7 @@ async function refreshAll() {
     api("/groups/feed"),
   ]);
   state.profile = profile;
+  state.auth = auth;
   state.today = today;
   state.summary = summary;
   state.calendar = calendar.days;
@@ -707,6 +743,7 @@ async function refreshAll() {
   renderGroup();
   renderFeed();
   renderProfileSummary();
+  renderAuthStatus();
   fillProfileForm();
 }
 

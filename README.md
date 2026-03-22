@@ -110,6 +110,8 @@ docker compose down
 ## 已实现接口
 
 - `POST /api/session/init`
+- `GET /api/auth/me`
+- `POST /api/auth/wechat/mini/login`
 - `GET /api/profile`
 - `PUT /api/profile`
 - `GET /api/checkins/today`
@@ -136,5 +138,16 @@ docker compose down
 - [docker-compose.yml](D:/Code/qingyin/docker-compose.yml)
 - [backend/Dockerfile](D:/Code/qingyin/backend/Dockerfile)
 - [nginx.conf](D:/Code/qingyin/nginx.conf)
+
+微信小程序登录相关环境变量：
+
+```bash
+WECHAT_MINI_APPID=your_wechat_mini_appid
+WECHAT_MINI_SECRET=your_wechat_mini_secret
+```
+
+示例文件见：
+
+- [\.env.example](D:/Code/qingyin/.env.example)
 
 如果你后面要做微信小程序或安卓 APK，建议下一步把前端迁到 `uni-app` 或 `Taro`，复用现在这套视觉和接口设计。

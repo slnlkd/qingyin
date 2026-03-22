@@ -12,3 +12,4 @@ backend/qingyin.db-shm
 backend/qingyin.db-wal
 frontend/.cache/
 backend-data/
+.env
