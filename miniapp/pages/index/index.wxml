@@ -74,6 +74,20 @@
     </view>
   </view>
 
+  <view wx:if="{{sessionToken}}" class="panel-card">
+    <view class="section-title">快捷入口</view>
+    <view class="quick-actions">
+      <view class="quick-action-card" bindtap="handleOpenCheckin">
+        <view class="quick-action-title">今日打卡</view>
+        <view class="quick-action-desc">选择心情、写下今天的感悟，直接完成打卡。</view>
+      </view>
+      <view class="quick-action-card" bindtap="handleOpenGroup">
+        <view class="quick-action-title">监督群组</view>
+        <view class="quick-action-desc">查看成员状态，催一下还没打卡的人。</view>
+      </view>
+    </view>
+  </view>
+
   <view wx:if="{{group}}" class="panel-card">
     <view class="section-title">当前监督群组</view>
     <view class="group-row">

@@ -88,6 +88,86 @@ async function fetchDashboard() {
   return { token, auth, profile, stats, groupState };
 }
 
+async function fetchTodayCheckin() {
+  const token = getToken();
+  if (!token) {
+    throw new Error("当前尚未登录微信小程序");
+  }
+
+  return request({
+    path: "/checkins/today",
+    token,
+  });
+}
+
+async function createCheckin(data) {
+  const token = getToken();
+  if (!token) {
+    throw new Error("当前尚未登录微信小程序");
+  }
+
+  return request({
+    path: "/checkins",
+    method: "POST",
+    data,
+    token,
+  });
+}
+
+async function fetchCurrentGroup() {
+  const token = getToken();
+  if (!token) {
+    throw new Error("当前尚未登录微信小程序");
+  }
+
+  return request({
+    path: "/groups/current",
+    token,
+  });
+}
+
+async function createGroup(data) {
+  const token = getToken();
+  if (!token) {
+    throw new Error("当前尚未登录微信小程序");
+  }
+
+  return request({
+    path: "/groups",
+    method: "POST",
+    data,
+    token,
+  });
+}
+
+async function joinGroup(data) {
+  const token = getToken();
+  if (!token) {
+    throw new Error("当前尚未登录微信小程序");
+  }
+
+  return request({
+    path: "/groups/join",
+    method: "POST",
+    data,
+    token,
+  });
+}
+
+async function remindGroupMember(targetUserId) {
+  const token = getToken();
+  if (!token) {
+    throw new Error("当前尚未登录微信小程序");
+  }
+
+  return request({
+    path: "/groups/remind",
+    method: "POST",
+    data: { target_user_id: targetUserId },
+    token,
+  });
+}
+
 async function updateProfile(data) {
   const token = getToken();
   if (!token) {
@@ -109,5 +189,11 @@ module.exports = {
   request,
   loginWithWechatMini,
   fetchDashboard,
+  fetchTodayCheckin,
+  createCheckin,
+  fetchCurrentGroup,
+  createGroup,
+  joinGroup,
+  remindGroupMember,
   updateProfile,
 };

@@ -123,6 +123,18 @@ Page({
     });
   },
 
+  handleOpenCheckin() {
+    wx.navigateTo({
+      url: "/pages/checkin/checkin",
+    });
+  },
+
+  handleOpenGroup() {
+    wx.navigateTo({
+      url: "/pages/group/group",
+    });
+  },
+
   handleCopyToken() {
     if (!this.data.sessionToken) {
       return;

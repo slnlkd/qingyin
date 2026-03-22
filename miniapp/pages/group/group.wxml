@@ -1,0 +1,83 @@
+<view class="page-shell">
+  <view wx:if="{{error}}" class="panel-card">
+    <view class="error-text">{{error}}</view>
+  </view>
+
+  <view wx:if="{{group}}" class="panel-card">
+    <view class="section-title">群组概况</view>
+    <view class="group-row">
+      <text class="group-label">群组名称</text>
+      <text class="group-value">{{group.name}}</text>
+    </view>
+    <view class="group-row">
+      <text class="group-label">邀请码</text>
+      <view class="right-actions">
+        <text class="group-value">{{group.invite_code}}</text>
+        <button class="ghost-button" bindtap="handleCopyInviteCode">复制</button>
+      </view>
+    </view>
+    <view class="group-row">
+      <text class="group-label">我的角色</text>
+      <text class="group-value">{{group.viewer_role === 'owner' ? '群主' : '成员'}}</text>
+    </view>
+    <view class="group-row">
+      <text class="group-label">今日提醒额度</text>
+      <view class="status-chip {{group.reminder_used_today ? 'warn' : ''}}">
+        {{group.reminder_used_today ? '今天已用掉' : '今天还可提醒一次'}}
+      </view>
+    </view>
+    <view wx:if="{{group.incoming_reminder}}" class="group-row">
+      <text class="group-label">收到提醒</text>
+      <view class="status-chip warn">{{group.incoming_reminder.actor_nickname}} 正在等你打卡</view>
+    </view>
+  </view>
+
+  <view wx:if="{{members.length}}" class="panel-card">
+    <view class="section-title">成员状态</view>
+    <view class="member-list">
+      <view wx:for="{{members}}" wx:key="user_id" class="member-row">
+        <view class="member-main">
+          <view class="member-avatar">{{item.avatar_emoji}}</view>
+          <view class="member-text">
+            <view class="member-name">{{item.nickname}}</view>
+            <view class="member-meta">连续打卡 {{item.streak_days}} 天</view>
+            <view class="member-meta">{{item.latest_mood || '暂无心情记录'}} · 节省 ¥{{item.saved_amount}}</view>
+          </view>
+        </view>
+        <view class="member-status">
+          <view class="status-chip {{item.checked_in_today ? '' : 'warn'}}">
+            {{item.checked_in_today ? '已打卡' : '待打卡'}}
+          </view>
+          <button
+            wx:if="{{!item.checked_in_today && !group.reminder_used_today && item.user_id !== viewerUserId}}"
+            class="ghost-button"
+            data-user-id="{{item.user_id}}"
+            bindtap="handleRemind"
+            style="margin-top: 12rpx;"
+          >
+            催一下
+          </button>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{!group}}" class="panel-card">
+    <view class="section-title">还没有监督群组</view>
+    <view class="muted-text">你可以先创建一个新的清饮监督组，或者输入邀请码加入已经存在的群组。</view>
+
+    <view class="group-actions">
+      <view class="form-item">
+        <text class="form-label">新群组名称</text>
+        <input class="form-input" value="{{createName}}" placeholder="例如：周末不喝酒小组" bindinput="handleCreateInput" />
+      </view>
+      <button class="primary-button" loading="{{acting}}" bindtap="handleCreateGroup">创建群组</button>
+
+      <view class="form-item">
+        <text class="form-label">输入邀请码加入</text>
+        <input class="form-input" value="{{joinCode}}" maxlength="12" placeholder="输入 6 位邀请码" bindinput="handleJoinInput" />
+      </view>
+      <button class="secondary-button" loading="{{acting}}" bindtap="handleJoinGroup">加入群组</button>
+    </view>
+  </view>
+</view>

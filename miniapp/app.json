@@ -1,6 +1,8 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/checkin/checkin",
+    "pages/group/group",
     "pages/profile/profile"
   ],
   "window": {

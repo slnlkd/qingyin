@@ -1,0 +1,82 @@
+<view class="page-shell">
+  <view class="panel-card checkin-ring-card">
+    <view class="section-title">今天也保持清醒</view>
+    <view class="checkin-date">{{todayStatus ? todayStatus.date : '正在读取日期...'}}</view>
+    <view class="checkin-ring {{todayStatus && todayStatus.checked_in ? 'done' : ''}}">
+      <view class="checkin-ring-inner">
+        <view class="checkin-mark">{{todayStatus && todayStatus.checked_in ? '✓' : '○'}}</view>
+        <view class="checkin-title">{{todayStatus && todayStatus.checked_in ? '今日已打卡' : '等待打卡'}}</view>
+        <view class="checkin-subtitle">
+          {{todayStatus && todayStatus.checked_in ? '今天这一步你已经完成了' : '选好心情后提交今天的记录'}}
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{error}}" class="error-text">{{error}}</view>
+  </view>
+
+  <view wx:if="{{stats}}" class="panel-card">
+    <view class="section-title">打卡后的变化</view>
+    <view class="stats-grid">
+      <view class="stat-item">
+        <view class="stat-label">连续打卡</view>
+        <view class="stat-value">{{stats.streak_days}}</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-label">累计签到</view>
+        <view class="stat-value">{{stats.total_checkins}}</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-label">节省金额</view>
+        <view class="stat-value small">¥{{stats.saved_amount}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{todayStatus && !todayStatus.checked_in}}" class="panel-card">
+    <view class="section-title">选择今天的状态</view>
+    <view class="mood-grid">
+      <view
+        wx:for="{{moods}}"
+        wx:key="label"
+        class="mood-chip {{selectedMood === item.label ? 'active' : ''}}"
+        data-mood="{{item.label}}"
+        bindtap="handleMoodSelect"
+      >
+        <view class="mood-emoji">{{item.icon}}</view>
+        <view class="mood-text">{{item.label}}</view>
+      </view>
+    </view>
+
+    <view class="form-item" style="margin-top: 24rpx;">
+      <text class="form-label">今日感悟</text>
+      <textarea
+        class="form-textarea"
+        maxlength="200"
+        placeholder="写下今天的感悟、诱因或者鼓励自己的一句话"
+        value="{{reflection}}"
+        bindinput="handleReflectionInput"
+      />
+      <view class="hint-text">哪怕只有一句，也会帮助你看清自己的变化。</view>
+    </view>
+
+    <view class="actions-row">
+      <button class="primary-button" loading="{{submitting}}" bindtap="handleSubmit">完成今日打卡</button>
+    </view>
+  </view>
+
+  <view wx:if="{{todayStatus && todayStatus.checked_in}}" class="panel-card">
+    <view class="section-title">今天的记录</view>
+    <view class="field-row">
+      <text class="field-label">今日心情</text>
+      <text class="field-value">{{todayStatus.entry.mood}}</text>
+    </view>
+    <view class="field-row">
+      <text class="field-label">记录时间</text>
+      <text class="field-value">{{todayStatus.entry.created_at}}</text>
+    </view>
+    <view class="form-item" style="margin-top: 18rpx;">
+      <text class="form-label">今日感悟</text>
+      <view class="muted-text">{{todayStatus.entry.reflection || '你今天没有填写额外感悟。'}}</view>
+    </view>
+  </view>
+</view>
