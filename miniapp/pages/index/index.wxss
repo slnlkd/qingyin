@@ -1,0 +1,5 @@
+.member-meta,
+.field-value,
+.group-value {
+  word-break: break-all;
+}

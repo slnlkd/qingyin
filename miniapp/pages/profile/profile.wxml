@@ -1,0 +1,54 @@
+<view class="page-shell">
+  <view class="panel-card form-card">
+    <view class="section-title">编辑清饮资料</view>
+    <view wx:if="{{error}}" class="error-text">{{error}}</view>
+
+    <view class="form-item">
+      <text class="form-label">昵称</text>
+      <input
+        class="form-input"
+        value="{{form.nickname}}"
+        data-field="nickname"
+        maxlength="20"
+        placeholder="请输入昵称"
+        bindinput="handleInput"
+      />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">头像表情</text>
+      <input
+        class="form-input"
+        value="{{form.avatar_emoji}}"
+        data-field="avatar_emoji"
+        maxlength="4"
+        placeholder="例如 🌿"
+        bindinput="handleInput"
+      />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">戒酒开始日</text>
+      <picker mode="date" value="{{form.sober_start_date}}" bindchange="handleDateChange">
+        <view class="form-picker">{{form.sober_start_date || '请选择日期'}}</view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">每日预算</text>
+      <input
+        class="form-input"
+        type="digit"
+        value="{{form.daily_budget}}"
+        data-field="daily_budget"
+        placeholder="请输入每日饮酒预算"
+        bindinput="handleInput"
+      />
+      <view class="form-hint">节省金额会按累计签到次数乘以这里的预算计算。</view>
+    </view>
+
+    <view class="actions-row">
+      <button class="primary-button" loading="{{saving}}" bindtap="handleSubmit">保存资料</button>
+    </view>
+  </view>
+</view>

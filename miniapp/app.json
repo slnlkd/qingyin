@@ -1,0 +1,15 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/profile/profile"
+  ],
+  "window": {
+    "navigationBarTitleText": "清饮打卡",
+    "navigationBarBackgroundColor": "#F7FBF8",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F7FBF8",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

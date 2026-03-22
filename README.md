@@ -3,6 +3,7 @@
 `Qingyin` 是一个面向移动端的戒酒打卡与互相监督 Web 应用 MVP，当前实现为：
 
 - 一个可直接部署的移动端 `PWA` 前端
+- 一个可在微信开发者工具中打开的 `miniapp` 小程序工程
 - 一个基于 `FastAPI + SQLite` 的轻量后端
 - 首页、统计、监督群组、监督动态、个人资料五个基础页面
 - 已支持监督群组内的手动催打卡提醒
@@ -52,6 +53,13 @@ qingyin/
 │  ├─ manifest.webmanifest
 │  ├─ styles.css
 │  └─ sw.js
+├─ miniapp/
+│  ├─ pages/
+│  ├─ utils/
+│  ├─ app.js
+│  ├─ app.json
+│  ├─ app.wxss
+│  └─ project.config.json
 ├─ requirements.txt
 └─ README.md
 ```
@@ -149,5 +157,43 @@ WECHAT_MINI_SECRET=your_wechat_mini_secret
 示例文件见：
 
 - [\.env.example](D:/Code/qingyin/.env.example)
+
+## 微信小程序工程
+
+当前仓库已经包含一个最小可用的小程序工程：
+
+- 目录：[miniapp](D:/Code/qingyin/miniapp)
+- 默认后端：`https://lvkedang.cn/qingyin-api`
+- 已接入：
+  - `wx.login()`
+  - `POST /api/auth/wechat/mini/login`
+  - `GET /api/auth/me`
+  - `GET /api/profile`
+  - `GET /api/stats/summary`
+  - `GET /api/groups/current`
+  - `PUT /api/profile`
+
+### 在微信开发者工具中打开
+
+1. 选择项目目录：`D:\Code\qingyin\miniapp`
+2. 确认 `project.config.json` 中的小程序 `AppID` 正确
+3. 在微信公众平台把请求合法域名配置为：
+
+```text
+https://lvkedang.cn
+```
+
+### 当前小程序页能力
+
+- 首页：
+  - 微信登录
+  - 账号绑定状态
+  - 连续打卡 / 戒酒总天数 / 节省金额
+  - 当前监督群组与成员状态
+- 资料页：
+  - 编辑昵称
+  - 编辑头像表情
+  - 编辑戒酒开始日
+  - 编辑每日预算
 
 如果你后面要做微信小程序或安卓 APK，建议下一步把前端迁到 `uni-app` 或 `Taro`，复用现在这套视觉和接口设计。

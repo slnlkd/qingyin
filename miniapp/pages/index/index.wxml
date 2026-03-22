@@ -1,0 +1,123 @@
+<view class="page-shell">
+  <view class="hero-card">
+    <view class="hero-title">清饮打卡</view>
+    <view class="hero-subtitle">先把小程序登录、资料读取和核心统计跑通，后面再继续补监督互动。</view>
+    <view wx:if="{{bindMessage}}" class="status-chip" style="margin-top: 20rpx;">{{bindMessage}}</view>
+    <view wx:if="{{error}}" class="error-text">{{error}}</view>
+    <view class="actions-row">
+      <button class="primary-button" loading="{{loggingIn}}" bindtap="handleWechatLogin">
+        {{sessionToken ? '重新登录微信' : '微信登录'}}
+      </button>
+      <button class="secondary-button" bindtap="handleRefreshTap" loading="{{loading}}">
+        刷新数据
+      </button>
+    </view>
+  </view>
+
+  <view wx:if="{{auth}}" class="panel-card">
+    <view class="section-title">账号状态</view>
+    <view class="field-row">
+      <text class="field-label">绑定状态</text>
+      <view class="status-chip {{auth.bound ? '' : 'neutral'}}">
+        {{auth.bound ? '已绑定微信小程序' : '未绑定'}}
+      </view>
+    </view>
+    <view class="field-row">
+      <text class="field-label">登录服务</text>
+      <text class="field-value">{{auth.login_ready ? '已就绪' : '未配置'}}</text>
+    </view>
+    <view class="field-row">
+      <text class="field-label">OpenID</text>
+      <text class="field-value">{{auth.openid_masked || '登录后自动生成'}}</text>
+    </view>
+    <view class="actions-row">
+      <button class="secondary-button" bindtap="handleOpenProfile">编辑资料</button>
+      <button class="secondary-button" bindtap="handleCopyToken" disabled="{{!sessionToken}}">复制令牌</button>
+    </view>
+  </view>
+
+  <view wx:if="{{profile}}" class="panel-card">
+    <view class="section-title">个人资料</view>
+    <view class="field-row">
+      <text class="field-label">昵称</text>
+      <text class="field-value">{{profile.nickname}}</text>
+    </view>
+    <view class="field-row">
+      <text class="field-label">头像</text>
+      <text class="field-value">{{profile.avatar_emoji}}</text>
+    </view>
+    <view class="field-row">
+      <text class="field-label">戒酒开始日</text>
+      <text class="field-value">{{profile.sober_start_date}}</text>
+    </view>
+    <view class="field-row">
+      <text class="field-label">每日预算</text>
+      <text class="field-value">¥{{profile.daily_budget}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{stats}}" class="panel-card">
+    <view class="section-title">核心统计</view>
+    <view class="stats-grid">
+      <view class="stat-item">
+        <view class="stat-label">连续打卡</view>
+        <view class="stat-value">{{stats.streak_days}}</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-label">戒酒总天数</view>
+        <view class="stat-value">{{stats.sober_days}}</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-label">节省金额</view>
+        <view class="stat-value small">¥{{stats.saved_amount}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{group}}" class="panel-card">
+    <view class="section-title">当前监督群组</view>
+    <view class="group-row">
+      <text class="group-label">群组名称</text>
+      <text class="group-value">{{group.name}}</text>
+    </view>
+    <view class="group-row">
+      <text class="group-label">邀请码</text>
+      <text class="group-value">{{group.invite_code}}</text>
+    </view>
+    <view class="group-row">
+      <text class="group-label">我的角色</text>
+      <text class="group-value">{{group.viewer_role === 'owner' ? '群主' : '成员'}}</text>
+    </view>
+    <view wx:if="{{group.incoming_reminder}}" class="group-row">
+      <text class="group-label">今日提醒</text>
+      <view class="status-chip warn">{{group.incoming_reminder.actor_nickname}} 正在等你打卡</view>
+    </view>
+  </view>
+
+  <view wx:if="{{members.length}}" class="panel-card">
+    <view class="section-title">成员进度</view>
+    <view class="member-list">
+      <view wx:for="{{members}}" wx:key="user_id" class="member-row">
+        <view class="member-main">
+          <view class="member-avatar">{{item.avatar_emoji}}</view>
+          <view class="member-text">
+            <view class="member-name">{{item.nickname}}</view>
+            <view class="member-meta">连续打卡 {{item.streak_days}} 天</view>
+          </view>
+        </view>
+        <view class="member-status">
+          <view class="status-chip {{item.checked_in_today ? '' : 'warn'}}">
+            {{item.checked_in_today ? '已打卡' : '待打卡'}}
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{!sessionToken && !loading}}" class="panel-card empty-state">
+    <view class="section-title">下一步</view>
+    <view class="muted-text">
+      先用微信登录把清饮账号建起来。后面我可以继续补小程序端的打卡、群组、社区和提醒。
+    </view>
+  </view>
+</view>

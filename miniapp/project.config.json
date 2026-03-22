@@ -1,0 +1,15 @@
+{
+  "appid": "wx12283c36baacfa44",
+  "compileType": "miniprogram",
+  "libVersion": "trial",
+  "projectname": "qingyin-miniapp",
+  "condition": {},
+  "setting": {
+    "urlCheck": true,
+    "es6": true,
+    "postcss": true,
+    "minified": true,
+    "enhance": true,
+    "coverView": true
+  }
+}
