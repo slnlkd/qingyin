@@ -1379,6 +1379,38 @@ textarea {
   color: var(--muted);
 }
 
+.feed-status-row {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.feed-status-row .mood-chip-icon,
+.feed-status-row .status-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.feed-status-row em,
+.feed-body-text {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feed-status-row.is-reminded {
+  color: var(--warn);
+}
+
 .member-card-actions {
   margin-top: 12px;
   display: flex;

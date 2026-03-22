@@ -570,6 +570,29 @@ function formatFeedItem(item) {
   return "有新的监督动态。";
 }
 
+function renderFeedBody(item) {
+  if (item.event_type === "checkin") {
+    const mood = moodMap.find((entry) => entry.label === item.payload.mood) || moodMap[2];
+    return `
+      <div class="feed-status-row">
+        ${moodIcon(mood.icon)}
+        <span>${escapeHtml(item.payload.mood || "一般")}</span>
+        <em>${escapeHtml(item.payload.reflection || "又坚持了一天，继续保持。")}</em>
+      </div>
+    `;
+  }
+  if (item.event_type === "member_reminded") {
+    return `
+      <div class="feed-status-row is-reminded">
+        ${statusIcon("reminded")}
+        <span>提醒打卡</span>
+        <em>${escapeHtml(item.payload.target_nickname || "")} 该更新今天的进度了</em>
+      </div>
+    `;
+  }
+  return `<div class="feed-body-text">${escapeHtml(formatFeedItem(item))}</div>`;
+}
+
 function formatFeedType(item) {
   const labels = {
     checkin: "今日打卡",
@@ -599,7 +622,7 @@ function renderFeed() {
             </div>
             <div class="feed-badge">${eventTypeIcon(item.event_type)}<span>${formatFeedType(item)}</span></div>
           </div>
-          <div class="feed-body">${escapeHtml(formatFeedItem(item))}</div>
+          <div class="feed-body">${renderFeedBody(item)}</div>
         </article>
       `,
     )
