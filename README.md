@@ -194,7 +194,11 @@ https://lvkedang.cn
   - 账号绑定状态
   - 连续打卡 / 戒酒总天数 / 节省金额
   - 当前监督群组与成员状态
-  - 打卡页、群组页、社区页入口
+  - 打卡页、统计页、群组页、社区页入口
+- 统计页：
+  - 读取 `/api/stats/summary`
+  - 读取 `/api/checkins/calendar`
+  - 展示核心统计、最近心情趋势和打卡月历
 - 今日打卡页：
   - 读取 `/api/checkins/today`
   - 选择心情并提交 `/api/checkins`

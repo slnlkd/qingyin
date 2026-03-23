@@ -102,6 +102,10 @@
         <view class="quick-action-title">今日打卡</view>
         <view class="quick-action-desc">选择心情、写下今天的感悟，直接完成打卡。</view>
       </view>
+      <view class="quick-action-card" bindtap="handleOpenStats">
+        <view class="quick-action-title">统计页</view>
+        <view class="quick-action-desc">查看连续打卡、月历记录和最近心情趋势。</view>
+      </view>
       <view class="quick-action-card" bindtap="handleOpenGroup">
         <view class="quick-action-title">监督群组</view>
         <view class="quick-action-desc">查看成员状态，催一下还没打卡的人。</view>

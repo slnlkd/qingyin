@@ -1,0 +1,56 @@
+<view class="page-shell">
+  <view class="panel-card">
+    <view class="section-title">统计概览</view>
+    <view class="stats-grid">
+      <view class="stat-item">
+        <view class="stat-label">连续打卡</view>
+        <view class="stat-value">{{stats ? stats.streak_days : 0}}</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-label">戒酒总天数</view>
+        <view class="stat-value">{{stats ? stats.sober_days : 0}}</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-label">节省金额</view>
+        <view class="stat-value small">¥{{stats ? stats.saved_amount : 0}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{error}}" class="panel-card">
+    <view class="error-text">{{error}}</view>
+  </view>
+
+  <view wx:if="{{stats}}" class="panel-card">
+    <view class="section-title">最近心情趋势</view>
+    <view wx:if="{{stats.recent_moods.length}}" class="trend-list">
+      <view wx:for="{{stats.recent_moods}}" wx:key="checkin_date" class="trend-row">
+        <view class="trend-day">{{item.checkin_date}}</view>
+        <view class="trend-mood">{{item.mood}}</view>
+      </view>
+    </view>
+    <view wx:else class="muted-text">最近还没有打卡记录，完成几次打卡后这里会显示心情变化。</view>
+  </view>
+
+  <view class="panel-card">
+    <view class="calendar-head">
+      <button class="ghost-button calendar-switch" bindtap="handlePrevMonth">上月</button>
+      <view class="calendar-title">{{calendarMonth}}</view>
+      <button class="ghost-button calendar-switch" bindtap="handleNextMonth">下月</button>
+    </view>
+    <view class="calendar-week-row">
+      <text>一</text>
+      <text>二</text>
+      <text>三</text>
+      <text>四</text>
+      <text>五</text>
+      <text>六</text>
+      <text>日</text>
+    </view>
+    <view class="calendar-grid">
+      <view wx:for="{{calendarCells}}" wx:key="key" class="calendar-cell {{item.empty ? 'is-empty' : ''}} {{item.checked ? 'is-checked' : ''}}">
+        <text wx:if="{{!item.empty}}" class="calendar-day">{{item.day}}</text>
+      </view>
+    </view>
+  </view>
+</view>

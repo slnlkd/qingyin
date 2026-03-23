@@ -155,6 +155,12 @@ Page({
     });
   },
 
+  handleOpenStats() {
+    wx.navigateTo({
+      url: "/pages/stats/stats",
+    });
+  },
+
   handleOpenGroup() {
     wx.navigateTo({
       url: "/pages/group/group",

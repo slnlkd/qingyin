@@ -103,6 +103,18 @@ async function fetchTodayCheckin() {
   });
 }
 
+async function fetchCheckinCalendar(month) {
+  const token = getToken();
+  if (!token) {
+    throw new Error("当前尚未登录微信小程序");
+  }
+
+  return request({
+    path: `/checkins/calendar?month=${month}`,
+    token,
+  });
+}
+
 async function createCheckin(data) {
   const token = getToken();
   if (!token) {
@@ -205,6 +217,7 @@ module.exports = {
   loginWithWechatMini,
   fetchDashboard,
   fetchTodayCheckin,
+  fetchCheckinCalendar,
   createCheckin,
   fetchCurrentGroup,
   fetchGroupFeed,
