@@ -1,4 +1,4 @@
-<view class="page-shell">
+<view class="page-shell with-bottom-nav">
   <view wx:if="{{error}}" class="panel-card">
     <view class="error-text">{{error}}</view>
   </view>
@@ -93,4 +93,15 @@
       <button class="secondary-button" loading="{{acting}}" bindtap="handleJoinGroup">加入群组</button>
     </view>
   </view>
+
+  <view class="panel-card">
+    <view class="section-title">返回主流程</view>
+    <view class="inline-button-row">
+      <button class="secondary-button" bindtap="handleOpenHome">回首页</button>
+      <button class="secondary-button" bindtap="handleOpenCheckin">去打卡</button>
+      <button class="secondary-button" bindtap="handleOpenProfile">去我的</button>
+    </view>
+  </view>
 </view>
+
+<bottom-nav current="community" />

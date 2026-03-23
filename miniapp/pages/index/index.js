@@ -14,7 +14,6 @@ Page({
     loggingIn: false,
     error: "",
     bindMessage: "",
-    transferCodeInput: "",
     sessionToken: "",
     auth: null,
     profile: null,
@@ -94,11 +93,9 @@ Page({
     this.setData({ loggingIn: true, error: "", bindMessage: "" });
 
     try {
-      const transferCode = this.data.transferCodeInput.trim().toUpperCase();
-      const result = await api.loginWithWechatMini("", transferCode);
+      const result = await api.loginWithWechatMini();
       this.setData({
         bindMessage: bindModeLabelMap[result.bind_mode] || "微信小程序登录成功",
-        transferCodeInput: "",
       });
       const dashboard = await api.fetchDashboard();
       this.applyDashboard(dashboard);
@@ -115,28 +112,6 @@ Page({
     } finally {
       this.setData({ loggingIn: false });
     }
-  },
-
-  handleTransferCodeInput(event) {
-    this.setData({
-      transferCodeInput: event.detail.value.toUpperCase(),
-    });
-  },
-
-  handlePasteTransferCode() {
-    wx.getClipboardData({
-      success: (result) => {
-        this.setData({
-          transferCodeInput: (result.data || "").trim().toUpperCase(),
-        });
-      },
-      fail: () => {
-        wx.showToast({
-          title: "读取剪贴板失败",
-          icon: "none",
-        });
-      },
-    });
   },
 
   handleRefreshTap() {

@@ -60,6 +60,28 @@
     </view>
   </view>
 
+  <view class="panel-card">
+    <view class="section-title">迁移 Web 端账号</view>
+    <view class="muted-text">
+      如果你已经在 Web 版清饮里打过卡或加入过监督群组，可以在 Web 端“我的”页生成迁移码，再回到这里完成一次绑定。
+    </view>
+    <view wx:if="{{transferMessage}}" class="status-chip" style="margin-top: 18rpx;">{{transferMessage}}</view>
+    <view class="form-item" style="margin-top: 20rpx;">
+      <text class="form-label">迁移码</text>
+      <input
+        class="form-input"
+        value="{{transferCodeInput}}"
+        maxlength="12"
+        placeholder="输入 6 位迁移码，没有可留空"
+        bindinput="handleTransferCodeInput"
+      />
+    </view>
+    <view class="inline-button-row">
+      <button class="secondary-button" bindtap="handlePasteTransferCode">从剪贴板粘贴</button>
+      <button class="secondary-button" loading="{{bindingTransfer}}" bindtap="handleClaimTransferCode">绑定迁移码</button>
+    </view>
+  </view>
+
   <view class="panel-card form-card">
     <view class="section-title">编辑清饮资料</view>
     <view wx:if="{{error}}" class="error-text">{{error}}</view>

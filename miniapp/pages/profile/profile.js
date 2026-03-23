@@ -1,14 +1,25 @@
 const api = require("../../utils/api");
 
+const bindModeLabelMap = {
+  created_new: "首次登录，已为你创建新的清饮账号",
+  bound_current: "已把当前清饮账号绑定到微信小程序",
+  restored_existing: "已恢复你之前绑定的清饮数据",
+  already_bound: "当前清饮账号已经绑定微信小程序",
+  claimed_transfer: "已把 Web 端当前账号迁移到微信小程序",
+};
+
 Page({
   data: {
     loading: false,
     saving: false,
+    bindingTransfer: false,
     error: "",
     auth: null,
     stats: null,
     group: null,
     members: [],
+    transferCodeInput: "",
+    transferMessage: "",
     form: {
       nickname: "",
       avatar_emoji: "🌿",
@@ -107,5 +118,57 @@ Page({
     wx.navigateTo({
       url: "/pages/group/group",
     });
+  },
+
+  handleTransferCodeInput(event) {
+    this.setData({
+      transferCodeInput: event.detail.value.toUpperCase(),
+    });
+  },
+
+  handlePasteTransferCode() {
+    wx.getClipboardData({
+      success: (result) => {
+        this.setData({
+          transferCodeInput: (result.data || "").trim().toUpperCase(),
+        });
+      },
+      fail: () => {
+        wx.showToast({
+          title: "读取剪贴板失败",
+          icon: "none",
+        });
+      },
+    });
+  },
+
+  async handleClaimTransferCode() {
+    const transferCode = this.data.transferCodeInput.trim().toUpperCase();
+    if (this.data.bindingTransfer || !transferCode) {
+      return;
+    }
+
+    this.setData({ bindingTransfer: true, error: "", transferMessage: "" });
+
+    try {
+      const result = await api.loginWithWechatMini(api.getToken(), transferCode);
+      this.setData({
+        transferCodeInput: "",
+        transferMessage: bindModeLabelMap[result.bind_mode] || "迁移码绑定成功",
+      });
+      await this.loadProfile();
+      wx.showToast({
+        title: "迁移成功",
+        icon: "success",
+      });
+    } catch (error) {
+      this.setData({ error: error.message || "迁移失败" });
+      wx.showToast({
+        title: "迁移失败",
+        icon: "none",
+      });
+    } finally {
+      this.setData({ bindingTransfer: false });
+    }
   },
 });

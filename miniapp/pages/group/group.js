@@ -183,6 +183,24 @@ Page({
     });
   },
 
+  handleOpenHome() {
+    wx.reLaunch({
+      url: "/pages/index/index",
+    });
+  },
+
+  handleOpenCheckin() {
+    wx.reLaunch({
+      url: "/pages/checkin/checkin",
+    });
+  },
+
+  handleOpenProfile() {
+    wx.reLaunch({
+      url: "/pages/profile/profile",
+    });
+  },
+
   formatMemberReflection(reflection) {
     if (!reflection) {
       return "今天还没有留下额外感悟。";
