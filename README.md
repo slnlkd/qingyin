@@ -119,6 +119,7 @@ docker compose down
 
 - `POST /api/session/init`
 - `GET /api/auth/me`
+- `POST /api/auth/transfer-code`
 - `POST /api/auth/wechat/mini/login`
 - `GET /api/profile`
 - `PUT /api/profile`
@@ -163,7 +164,9 @@ WECHAT_MINI_SECRET=your_wechat_mini_secret
 当前仓库已经包含一个最小可用的小程序工程：
 
 - 目录：[miniapp](D:/Code/qingyin/miniapp)
-- 默认后端：`https://lvkedang.cn/qingyin-api`
+- 默认后端：
+  - 开发版：`https://8.155.168.138/qingyin-api`
+  - 体验版/正式版：`https://lvkedang.cn/qingyin-api`
 - 已接入：
   - `wx.login()`
   - `POST /api/auth/wechat/mini/login`
@@ -187,6 +190,7 @@ https://lvkedang.cn
 
 - 首页：
   - 微信登录
+  - 输入迁移码，把 Web 端当前账号迁移到小程序
   - 账号绑定状态
   - 连续打卡 / 戒酒总天数 / 节省金额
   - 当前监督群组与成员状态
@@ -206,5 +210,14 @@ https://lvkedang.cn
   - 编辑头像表情
   - 编辑戒酒开始日
   - 编辑每日预算
+
+### Web 到小程序迁移
+
+当前已经支持最小迁移桥接：
+
+1. 在 Web 版清饮的“我的”页生成一个 10 分钟有效的迁移码
+2. 在微信小程序首页输入迁移码
+3. 点击微信登录
+4. 后端会把当前 Web 账号的资料、打卡记录和监督群组绑定到这个小程序账号
 
 如果你后面要做微信小程序或安卓 APK，建议下一步把前端迁到 `uni-app` 或 `Taro`，复用现在这套视觉和接口设计。

@@ -18,6 +18,7 @@ const state = {
   token: localStorage.getItem(TOKEN_KEY) || "",
   profile: null,
   auth: null,
+  transferCode: null,
   today: null,
   summary: null,
   calendar: [],
@@ -130,6 +131,18 @@ function formatFeedTime(value) {
     hour12: false,
     timeZone: "Asia/Shanghai",
   }).format(parsed);
+}
+
+function formatTransferExpiry(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function escapeHtml(value) {
@@ -679,6 +692,34 @@ function renderAuthStatus() {
     return;
   }
 
+  const transferBlock = state.auth.login_ready
+    ? `
+      <div class="auth-transfer-block">
+        <div class="auth-transfer-top">
+          <div>
+            <div class="member-name">迁移到微信小程序</div>
+            <div class="group-meta">${
+              state.transferCode
+                ? `迁移码 ${state.transferCode.code}，${formatTransferExpiry(state.transferCode.expires_at)} 前有效`
+                : "生成 10 分钟有效的迁移码，在小程序中输入即可接过当前账号数据"
+            }</div>
+          </div>
+          <button class="secondary-btn" type="button" data-auth-action="create-transfer-code">${
+            state.transferCode ? "重新生成" : "生成迁移码"
+          }</button>
+        </div>
+        ${
+          state.transferCode
+            ? `<div class="auth-transfer-code-row">
+                <strong class="auth-transfer-code">${state.transferCode.code}</strong>
+                <button class="secondary-btn" type="button" data-auth-action="copy-transfer-code" data-transfer-code="${state.transferCode.code}">复制</button>
+              </div>`
+            : ""
+        }
+      </div>
+    `
+    : "";
+
   el.authCard.innerHTML = `
     <div class="auth-card-main">
       <div>
@@ -688,6 +729,7 @@ function renderAuthStatus() {
       <div class="meta-pill ${state.auth.login_ready ? "" : "is-pending"}">${state.auth.login_ready ? "可绑定" : "未就绪"}</div>
     </div>
     <p>当前仍是本地会话。后续在微信小程序首次登录时，可将当前设备上的资料与监督关系绑定为正式账号。</p>
+    ${transferBlock}
   `;
 }
 
@@ -729,6 +771,9 @@ async function refreshAll() {
   ]);
   state.profile = profile;
   state.auth = auth;
+  if (auth?.bound) {
+    state.transferCode = null;
+  }
   state.today = today;
   state.summary = summary;
   state.calendar = calendar.days;
@@ -862,6 +907,19 @@ async function remindMember(targetUserId) {
   }
 }
 
+async function createTransferCode() {
+  try {
+    const result = await api("/auth/transfer-code", {
+      method: "POST",
+    });
+    state.transferCode = result;
+    renderAuthStatus();
+    showToast(`迁移码 ${result.code} 已生成`);
+  } catch (error) {
+    await handleActionError(error);
+  }
+}
+
 function registerEvents() {
   document.querySelectorAll(".nav-item").forEach((item) => {
     item.addEventListener("click", () => switchPage(item.dataset.target));
@@ -937,6 +995,24 @@ function registerEvents() {
     if (!actionTarget) return;
     if (actionTarget.dataset.profileAction === "open-challenge") {
       switchPage("challenge");
+    }
+  });
+  el.authCard.addEventListener("click", async (event) => {
+    const actionTarget = event.target.closest("[data-auth-action]");
+    if (!actionTarget) return;
+    const action = actionTarget.dataset.authAction;
+    if (action === "create-transfer-code") {
+      await createTransferCode();
+      return;
+    }
+    if (action === "copy-transfer-code") {
+      const code = actionTarget.dataset.transferCode;
+      try {
+        await navigator.clipboard.writeText(code);
+        showToast("迁移码已复制");
+      } catch {
+        showToast(`迁移码：${code}`);
+      }
     }
   });
 }

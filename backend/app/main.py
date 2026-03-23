@@ -25,6 +25,8 @@ DEFAULT_NICKNAME = "清饮用户"
 DEFAULT_AVATAR = "🌿"
 DEFAULT_DAILY_BUDGET = 48
 WECHAT_PROVIDER = "wechat_mini"
+TRANSFER_CODE_TTL_MINUTES = 10
+TRANSFER_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 
 app = FastAPI(title="Qingyin API", version="0.1.0")
@@ -72,6 +74,7 @@ class GroupRemindPayload(BaseModel):
 
 class WechatMiniLoginPayload(BaseModel):
     code: str = Field(min_length=1, max_length=128)
+    transfer_code: str | None = Field(default=None, min_length=4, max_length=12)
 
 
 @contextmanager
@@ -170,6 +173,17 @@ def init_db() -> None:
                 last_login_at TEXT NOT NULL,
                 UNIQUE(provider, provider_user_id),
                 UNIQUE(provider, user_id),
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS auth_transfer_codes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT NOT NULL UNIQUE,
+                user_id INTEGER NOT NULL,
+                created_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                used_at TEXT,
+                claimed_provider_user_id TEXT,
                 FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
             );
             """
@@ -288,6 +302,47 @@ def serialize_auth_status(identity: sqlite3.Row | None) -> dict[str, Any]:
         "union_id_bound": bool(identity and identity["union_id"]),
         "login_ready": bool(os.getenv("WECHAT_MINI_APPID") and os.getenv("WECHAT_MINI_SECRET")),
     }
+
+
+def create_transfer_code(conn: sqlite3.Connection, user_id: int) -> dict[str, str]:
+    conn.execute(
+        """
+        DELETE FROM auth_transfer_codes
+        WHERE user_id = ? AND used_at IS NULL
+        """,
+        (user_id,),
+    )
+    created_at = now_iso()
+    expires_at = (datetime.now(APP_TZ) + timedelta(minutes=TRANSFER_CODE_TTL_MINUTES)).isoformat(timespec="seconds")
+    for _ in range(8):
+        code = "".join(secrets.choice(TRANSFER_CODE_ALPHABET) for _ in range(6))
+        exists = conn.execute(
+            "SELECT 1 FROM auth_transfer_codes WHERE code = ? LIMIT 1",
+            (code,),
+        ).fetchone()
+        if exists:
+            continue
+        conn.execute(
+            """
+            INSERT INTO auth_transfer_codes (code, user_id, created_at, expires_at, used_at, claimed_provider_user_id)
+            VALUES (?, ?, ?, ?, NULL, NULL)
+            """,
+            (code, user_id, created_at, expires_at),
+        )
+        return {"code": code, "expires_at": expires_at}
+    raise HTTPException(status_code=500, detail="迁移码生成失败，请稍后重试")
+
+
+def get_valid_transfer_code(conn: sqlite3.Connection, code: str) -> sqlite3.Row | None:
+    return conn.execute(
+        """
+        SELECT *
+        FROM auth_transfer_codes
+        WHERE code = ? AND used_at IS NULL AND expires_at > ?
+        LIMIT 1
+        """,
+        (code, now_iso()),
+    ).fetchone()
 
 
 def user_has_meaningful_data(conn: sqlite3.Connection, user_id: int) -> bool:
@@ -441,6 +496,17 @@ def get_auth_me(user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
     return serialize_auth_status(identity)
 
 
+@app.post("/api/auth/transfer-code")
+def create_auth_transfer_code(user: dict[str, Any] = Depends(auth_user)) -> dict[str, Any]:
+    with get_db() as conn:
+        transfer = create_transfer_code(conn, user["user_id"])
+    return {
+        "code": transfer["code"],
+        "expires_at": transfer["expires_at"],
+        "expires_in_minutes": TRANSFER_CODE_TTL_MINUTES,
+    }
+
+
 @app.post("/api/auth/wechat/mini/login")
 def auth_wechat_mini_login(
     payload: WechatMiniLoginPayload,
@@ -450,6 +516,7 @@ def auth_wechat_mini_login(
     openid = wechat_result["openid"]
     union_id = wechat_result.get("unionid")
     now = now_iso()
+    transfer_code = payload.transfer_code.strip().upper() if payload.transfer_code else None
 
     with get_db() as conn:
         current_session = get_session_row(conn, x_session_token) if x_session_token else None
@@ -489,7 +556,43 @@ def auth_wechat_mini_login(
                 token = create_session(conn, target_user_id)
                 bind_mode = "restored_existing"
         else:
-            if current_user:
+            if transfer_code:
+                transfer = get_valid_transfer_code(conn, transfer_code)
+                if not transfer:
+                    raise HTTPException(status_code=404, detail="迁移码无效或已过期")
+
+                target_user_id = int(transfer["user_id"])
+                existing_bound_identity = get_auth_identity_by_user(conn, target_user_id)
+                if existing_bound_identity:
+                    raise HTTPException(status_code=409, detail="该清饮账号已绑定其他微信小程序")
+
+                if current_user and current_user["id"] != target_user_id:
+                    if user_has_meaningful_data(conn, current_user["id"]):
+                        raise HTTPException(status_code=409, detail="当前小程序账号已有数据，暂不支持覆盖绑定")
+                    conn.execute(
+                        "UPDATE sessions SET user_id = ?, last_seen_at = ? WHERE id = ?",
+                        (target_user_id, now, current_session["id"]),
+                    )
+                    token = current_session["token"]
+                elif current_session:
+                    conn.execute(
+                        "UPDATE sessions SET last_seen_at = ? WHERE id = ?",
+                        (now, current_session["id"]),
+                    )
+                    token = current_session["token"]
+                else:
+                    token = create_session(conn, target_user_id)
+
+                conn.execute(
+                    """
+                    UPDATE auth_transfer_codes
+                    SET used_at = ?, claimed_provider_user_id = ?
+                    WHERE id = ?
+                    """,
+                    (now, openid, transfer["id"]),
+                )
+                bind_mode = "claimed_transfer"
+            elif current_user:
                 target_user_id = int(current_user["id"])
                 token = current_session["token"]
                 bind_mode = "bound_current"

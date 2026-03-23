@@ -5,6 +5,7 @@ const bindModeLabelMap = {
   bound_current: "已把当前清饮账号绑定到微信小程序",
   restored_existing: "已恢复你之前绑定的清饮数据",
   already_bound: "当前清饮账号已经绑定微信小程序",
+  claimed_transfer: "已把 Web 端当前账号迁移到微信小程序",
 };
 
 Page({
@@ -13,6 +14,7 @@ Page({
     loggingIn: false,
     error: "",
     bindMessage: "",
+    transferCodeInput: "",
     sessionToken: "",
     auth: null,
     profile: null,
@@ -92,9 +94,11 @@ Page({
     this.setData({ loggingIn: true, error: "", bindMessage: "" });
 
     try {
-      const result = await api.loginWithWechatMini();
+      const transferCode = this.data.transferCodeInput.trim().toUpperCase();
+      const result = await api.loginWithWechatMini("", transferCode);
       this.setData({
         bindMessage: bindModeLabelMap[result.bind_mode] || "微信小程序登录成功",
+        transferCodeInput: "",
       });
       const dashboard = await api.fetchDashboard();
       this.applyDashboard(dashboard);
@@ -111,6 +115,28 @@ Page({
     } finally {
       this.setData({ loggingIn: false });
     }
+  },
+
+  handleTransferCodeInput(event) {
+    this.setData({
+      transferCodeInput: event.detail.value.toUpperCase(),
+    });
+  },
+
+  handlePasteTransferCode() {
+    wx.getClipboardData({
+      success: (result) => {
+        this.setData({
+          transferCodeInput: (result.data || "").trim().toUpperCase(),
+        });
+      },
+      fail: () => {
+        wx.showToast({
+          title: "读取剪贴板失败",
+          icon: "none",
+        });
+      },
+    });
   },
 
   handleRefreshTap() {

@@ -1225,6 +1225,35 @@ textarea {
   gap: 12px;
 }
 
+.auth-transfer-block {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(121, 157, 144, 0.12);
+  display: grid;
+  gap: 12px;
+}
+
+.auth-transfer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.auth-transfer-code-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.auth-transfer-code {
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  color: var(--accent-deep);
+}
+
 .profile-overview-card {
   margin-top: 4px;
   display: grid;

@@ -14,6 +14,27 @@
     </view>
   </view>
 
+  <view class="panel-card">
+    <view class="section-title">迁移 Web 端账号</view>
+    <view class="muted-text">
+      如果你已经在 Web 版清饮里打过卡或加入过监督群组，先在 Web 端“我的”页生成迁移码，再回到这里输入，首次微信登录时就能接过原来的数据。
+    </view>
+    <view class="form-item" style="margin-top: 20rpx;">
+      <text class="form-label">迁移码</text>
+      <input
+        class="form-input"
+        value="{{transferCodeInput}}"
+        maxlength="12"
+        placeholder="输入 6 位迁移码，没有可留空"
+        bindinput="handleTransferCodeInput"
+      />
+    </view>
+    <view class="inline-button-row">
+      <button class="secondary-button" bindtap="handlePasteTransferCode">从剪贴板粘贴</button>
+      <button class="secondary-button" bindtap="handleRefreshTap">刷新状态</button>
+    </view>
+  </view>
+
   <view wx:if="{{auth}}" class="panel-card">
     <view class="section-title">账号状态</view>
     <view class="field-row">

@@ -58,12 +58,15 @@ function wxLogin() {
   });
 }
 
-async function loginWithWechatMini(existingToken = "") {
+async function loginWithWechatMini(existingToken = "", transferCode = "") {
   const code = await wxLogin();
   const response = await request({
     path: "/auth/wechat/mini/login",
     method: "POST",
-    data: { code },
+    data: {
+      code,
+      transfer_code: transferCode || undefined,
+    },
     token: existingToken || getToken(),
   });
   if (response.token) {
