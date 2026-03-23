@@ -1,13 +1,13 @@
-const CACHE_NAME = "qingyin-static-v26";
+const CACHE_NAME = "qingyin-static-v27";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=20260322c",
-  "./app.js?v=20260322c",
-  "./manifest.webmanifest?v=20260322c",
+  "./styles.css?v=20260323a",
+  "./app.js?v=20260323a",
+  "./manifest.webmanifest?v=20260323a",
   "./assets/icon-192.svg",
   "./assets/icon-512.svg",
-  "./assets/favicon.svg?v=20260322c",
+  "./assets/favicon.svg?v=20260323a",
   "./assets/design-reference.png",
 ];
 
