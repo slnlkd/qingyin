@@ -1,4 +1,4 @@
-<view class="page-shell">
+<view class="page-shell with-bottom-nav">
   <view class="panel-card">
     <view class="section-title">监督社区</view>
     <view class="muted-text">这里会显示群组里的打卡、提醒和成员加入动态。下拉可以刷新最新内容。</view>
@@ -32,3 +32,5 @@
     <view class="muted-text">当群组成员打卡、加入群组或互相提醒后，这里就会出现对应记录。</view>
   </view>
 </view>
+
+<bottom-nav current="community" />

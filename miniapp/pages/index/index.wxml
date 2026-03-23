@@ -1,4 +1,4 @@
-<view class="page-shell">
+<view class="page-shell with-bottom-nav">
   <view class="hero-card">
     <view class="hero-title">清饮打卡</view>
     <view class="hero-subtitle">先把小程序登录、资料读取和核心统计跑通，后面再继续补监督互动。</view>
@@ -164,3 +164,5 @@
     </view>
   </view>
 </view>
+
+<bottom-nav current="home" />

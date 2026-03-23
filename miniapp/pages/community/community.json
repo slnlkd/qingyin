@@ -1,4 +1,7 @@
 {
   "navigationBarTitleText": "社区动态",
-  "enablePullDownRefresh": true
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "bottom-nav": "/components/bottom-nav/bottom-nav"
+  }
 }

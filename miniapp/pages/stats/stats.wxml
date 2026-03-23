@@ -1,4 +1,4 @@
-<view class="page-shell">
+<view class="page-shell with-bottom-nav">
   <view class="panel-card">
     <view class="section-title">统计概览</view>
     <view class="stats-grid">
@@ -54,3 +54,5 @@
     </view>
   </view>
 </view>
+
+<bottom-nav current="stats" />

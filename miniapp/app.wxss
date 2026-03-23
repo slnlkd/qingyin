@@ -9,6 +9,10 @@ page {
   padding: 24rpx 24rpx 40rpx;
 }
 
+.page-shell.with-bottom-nav {
+  padding-bottom: calc(190rpx + env(safe-area-inset-bottom));
+}
+
 .hero-card,
 .panel-card {
   background: rgba(255, 255, 255, 0.92);
