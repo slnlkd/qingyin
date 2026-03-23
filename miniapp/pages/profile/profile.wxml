@@ -1,4 +1,65 @@
 <view class="page-shell">
+  <view class="panel-card profile-hero-card">
+    <view class="profile-hero-top">
+      <view>
+        <view class="hero-title">{{form.avatar_emoji}} {{form.nickname || '清饮用户'}}</view>
+        <view class="hero-subtitle">把自己的资料、统计和群组状态放在一起看清楚。</view>
+      </view>
+      <view class="status-chip {{auth && auth.bound ? '' : 'neutral'}}">
+        {{auth && auth.bound ? '已绑定微信小程序' : '未绑定'}}
+      </view>
+    </view>
+    <view wx:if="{{stats}}" class="stats-grid profile-stats-grid">
+      <view class="stat-item">
+        <view class="stat-label">戒酒总天数</view>
+        <view class="stat-value">{{stats.sober_days}}</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-label">连续打卡</view>
+        <view class="stat-value">{{stats.streak_days}}</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-label">节省金额</view>
+        <view class="stat-value small">¥{{stats.saved_amount}}</view>
+      </view>
+    </view>
+    <view class="inline-button-row">
+      <button class="secondary-button" bindtap="handleRefresh" loading="{{loading}}">刷新数据</button>
+      <button wx:if="{{group}}" class="secondary-button" bindtap="handleOpenGroup">前往群组</button>
+    </view>
+  </view>
+
+  <view wx:if="{{group}}" class="panel-card">
+    <view class="section-title">当前监督群组</view>
+    <view class="group-row">
+      <text class="group-label">群组名称</text>
+      <text class="group-value">{{group.name}}</text>
+    </view>
+    <view class="group-row">
+      <text class="group-label">邀请码</text>
+      <view class="right-actions">
+        <text class="group-value">{{group.invite_code}}</text>
+        <button class="ghost-button" bindtap="handleCopyInviteCode">复制</button>
+      </view>
+    </view>
+    <view class="group-row">
+      <text class="group-label">我的角色</text>
+      <text class="group-value">{{group.viewer_role === 'owner' ? '群主' : '成员'}}</text>
+    </view>
+    <view class="group-row">
+      <text class="group-label">群组人数</text>
+      <text class="group-value">{{members.length}} 人</text>
+    </view>
+  </view>
+
+  <view wx:if="{{!group && !loading}}" class="panel-card">
+    <view class="section-title">当前监督群组</view>
+    <view class="muted-text">你还没有加入监督群组，可以去群组页创建或输入邀请码加入。</view>
+    <view class="actions-row">
+      <button class="secondary-button" bindtap="handleOpenGroup">前往群组页</button>
+    </view>
+  </view>
+
   <view class="panel-card form-card">
     <view class="section-title">编辑清饮资料</view>
     <view wx:if="{{error}}" class="error-text">{{error}}</view>

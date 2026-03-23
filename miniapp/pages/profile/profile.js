@@ -5,6 +5,10 @@ Page({
     loading: false,
     saving: false,
     error: "",
+    auth: null,
+    stats: null,
+    group: null,
+    members: [],
     form: {
       nickname: "",
       avatar_emoji: "🌿",
@@ -22,6 +26,10 @@ Page({
     try {
       const dashboard = await api.fetchDashboard();
       this.setData({
+        auth: dashboard.auth,
+        stats: dashboard.stats,
+        group: dashboard.groupState.group || null,
+        members: dashboard.groupState.members || [],
         form: {
           nickname: dashboard.profile.nickname,
           avatar_emoji: dashboard.profile.avatar_emoji,
@@ -80,5 +88,24 @@ Page({
     } finally {
       this.setData({ saving: false });
     }
+  },
+
+  handleRefresh() {
+    this.loadProfile();
+  },
+
+  handleCopyInviteCode() {
+    if (!this.data.group) {
+      return;
+    }
+    wx.setClipboardData({
+      data: this.data.group.invite_code,
+    });
+  },
+
+  handleOpenGroup() {
+    wx.navigateTo({
+      url: "/pages/group/group",
+    });
   },
 });

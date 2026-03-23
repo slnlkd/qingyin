@@ -1,3 +1,42 @@
+.profile-hero-card {
+  padding: 28rpx 24rpx;
+}
+
+.profile-hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.profile-hero-top .status-chip {
+  flex-shrink: 0;
+  margin-top: 4rpx;
+}
+
+.profile-stats-grid {
+  margin-top: 22rpx;
+}
+
+.profile-stats-grid .stat-item {
+  text-align: center;
+}
+
+.group-row .right-actions {
+  max-width: 62%;
+}
+
+.group-row .group-value {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-row .ghost-button {
+  flex-shrink: 0;
+}
+
 .form-card {
   margin-top: 12rpx;
 }
