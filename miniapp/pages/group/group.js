@@ -10,6 +10,7 @@ Page({
     members: [],
     createName: "",
     joinCode: "",
+    renameName: "",
   },
 
   onShow() {
@@ -36,6 +37,7 @@ Page({
         viewerUserId: dashboard.profile.user_id,
         group: groupState.group || null,
         members: groupState.members || [],
+        renameName: groupState.group ? groupState.group.name : "",
       });
     } catch (error) {
       this.setData({ error: error.message || "读取群组失败" });
@@ -50,6 +52,10 @@ Page({
 
   handleJoinInput(event) {
     this.setData({ joinCode: event.detail.value.toUpperCase() });
+  },
+
+  handleRenameInput(event) {
+    this.setData({ renameName: event.detail.value });
   },
 
   async handleCreateGroup() {
@@ -119,6 +125,55 @@ Page({
     }
   },
 
+  async handleRenameGroup() {
+    const name = this.data.renameName.trim();
+    if (this.data.acting || !name) {
+      return;
+    }
+
+    this.setData({ acting: true, error: "" });
+    try {
+      await api.updateCurrentGroup({ name });
+      wx.showToast({
+        title: "群组名称已更新",
+        icon: "success",
+      });
+      await this.bootstrap();
+    } catch (error) {
+      this.setData({ error: error.message || "修改群组名称失败" });
+      wx.showToast({
+        title: "修改失败",
+        icon: "none",
+      });
+    } finally {
+      this.setData({ acting: false });
+    }
+  },
+
+  async handleRefreshInviteCode() {
+    if (this.data.acting) {
+      return;
+    }
+
+    this.setData({ acting: true, error: "" });
+    try {
+      await api.updateCurrentGroup({ refresh_invite_code: true });
+      wx.showToast({
+        title: "邀请码已刷新",
+        icon: "success",
+      });
+      await this.bootstrap();
+    } catch (error) {
+      this.setData({ error: error.message || "刷新邀请码失败" });
+      wx.showToast({
+        title: "刷新失败",
+        icon: "none",
+      });
+    } finally {
+      this.setData({ acting: false });
+    }
+  },
+
   handleCopyInviteCode() {
     if (!this.data.group) {
       return;
@@ -126,5 +181,12 @@ Page({
     wx.setClipboardData({
       data: this.data.group.invite_code,
     });
+  },
+
+  formatMemberReflection(reflection) {
+    if (!reflection) {
+      return "今天还没有留下额外感悟。";
+    }
+    return reflection.length > 28 ? `${reflection.slice(0, 28)}...` : reflection;
   },
 });

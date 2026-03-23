@@ -30,6 +30,17 @@
       <text class="group-label">收到提醒</text>
       <view class="status-chip warn">{{group.incoming_reminder.actor_nickname}} 正在等你打卡</view>
     </view>
+    <view wx:if="{{group.viewer_role === 'owner'}}" class="group-manage-box">
+      <view class="section-title group-manage-title">群组管理</view>
+      <view class="form-item">
+        <text class="form-label">修改群组名称</text>
+        <input class="form-input" value="{{renameName}}" maxlength="30" bindinput="handleRenameInput" placeholder="输入新的群组名称" />
+      </view>
+      <view class="inline-button-row">
+        <button class="secondary-button" loading="{{acting}}" bindtap="handleRenameGroup">保存名称</button>
+        <button class="secondary-button" loading="{{acting}}" bindtap="handleRefreshInviteCode">刷新邀请码</button>
+      </view>
+    </view>
   </view>
 
   <view wx:if="{{members.length}}" class="panel-card">
@@ -40,14 +51,16 @@
           <view class="member-avatar">{{item.avatar_emoji}}</view>
           <view class="member-text">
             <view class="member-name">{{item.nickname}}</view>
-            <view class="member-meta">连续打卡 {{item.streak_days}} 天</view>
-            <view class="member-meta">{{item.latest_mood || '暂无心情记录'}} · 节省 ¥{{item.saved_amount}}</view>
+            <view class="member-meta">{{item.role === 'owner' ? '群主' : '成员'}} · 连续打卡 {{item.streak_days}} 天 · 戒酒 {{item.sober_days}} 天</view>
+            <view class="member-meta">最近心情：{{item.latest_mood || '暂无心情记录'}} · 节省 ¥{{item.saved_amount}}</view>
+            <view class="member-reflection">{{item.latest_reflection || '今天还没有留下额外感悟。'}}</view>
           </view>
         </view>
         <view class="member-status">
           <view class="status-chip {{item.checked_in_today ? '' : 'warn'}}">
             {{item.checked_in_today ? '已打卡' : '待打卡'}}
           </view>
+          <view wx:if="{{group.reminder_target_user_id === item.user_id}}" class="status-chip warn" style="margin-top: 12rpx;">今天已提醒</view>
           <button
             wx:if="{{!item.checked_in_today && !group.reminder_used_today && item.user_id !== viewerUserId}}"
             class="ghost-button"

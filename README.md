@@ -208,6 +208,8 @@ https://lvkedang.cn
   - 读取 `/api/groups/current`
   - 创建群组
   - 通过邀请码加入群组
+  - 群主修改群组名称
+  - 群主刷新邀请码
   - 查看成员状态
   - 对未打卡成员执行 `/api/groups/remind`
 - 社区动态页：

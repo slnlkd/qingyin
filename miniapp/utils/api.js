@@ -195,6 +195,20 @@ async function remindGroupMember(targetUserId) {
   });
 }
 
+async function updateCurrentGroup(data) {
+  const token = getToken();
+  if (!token) {
+    throw new Error("当前尚未登录微信小程序");
+  }
+
+  return request({
+    path: "/groups/current",
+    method: "PUT",
+    data,
+    token,
+  });
+}
+
 async function updateProfile(data) {
   const token = getToken();
   if (!token) {
@@ -224,5 +238,6 @@ module.exports = {
   createGroup,
   joinGroup,
   remindGroupMember,
+  updateCurrentGroup,
   updateProfile,
 };
