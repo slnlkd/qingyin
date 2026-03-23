@@ -1,9 +1,33 @@
 <view class="page-shell with-bottom-nav">
-  <view class="hero-card">
-    <view class="hero-title">清饮打卡</view>
-    <view class="hero-subtitle">先把小程序登录、资料读取和核心统计跑通，首页只保留最常用的动作和状态。</view>
-    <view wx:if="{{bindMessage}}" class="status-chip" style="margin-top: 20rpx;">{{bindMessage}}</view>
+  <view class="hero-card home-hero-card">
+    <view class="home-hero-top">
+      <view>
+        <view class="home-eyebrow">Qingyin</view>
+        <view class="hero-title">{{profile ? profile.avatar_emoji : '🌿'}} {{profile ? profile.nickname : '清饮打卡'}}</view>
+        <view class="hero-subtitle home-hero-subtitle">
+          {{sessionToken ? '今天也把清醒和监督放在第一位。' : '先完成微信登录，再把打卡、统计和监督串起来。'}}
+        </view>
+      </view>
+      <view wx:if="{{auth}}" class="status-chip {{auth.bound ? '' : 'neutral'}} home-auth-chip">
+        {{auth.bound ? '已绑定' : '未绑定'}}
+      </view>
+    </view>
     <view wx:if="{{error}}" class="error-text">{{error}}</view>
+    <view wx:if="{{bindMessage}}" class="status-chip home-bind-message">{{bindMessage}}</view>
+    <view wx:if="{{stats}}" class="stats-grid home-hero-stats">
+      <view class="stat-item hero-stat-item">
+        <view class="stat-label">连续打卡</view>
+        <view class="stat-value">{{stats.streak_days}}</view>
+      </view>
+      <view class="stat-item hero-stat-item">
+        <view class="stat-label">戒酒总天数</view>
+        <view class="stat-value">{{stats.sober_days}}</view>
+      </view>
+      <view class="stat-item hero-stat-item">
+        <view class="stat-label">节省金额</view>
+        <view class="stat-value small">¥{{stats.saved_amount}}</view>
+      </view>
+    </view>
     <view class="actions-row">
       <button class="primary-button" loading="{{loggingIn}}" bindtap="handleWechatLogin">
         {{sessionToken ? '重新登录微信' : '微信登录'}}
@@ -14,11 +38,37 @@
     </view>
   </view>
 
-  <view wx:if="{{auth}}" class="panel-card">
-    <view class="section-title">账号状态</view>
+  <view wx:if="{{sessionToken}}" class="panel-card home-quick-panel">
+    <view class="section-title">快捷入口</view>
+    <view class="quick-actions home-quick-actions">
+      <view class="quick-action-card home-quick-card home-quick-card-primary" bindtap="handleOpenCheckin">
+        <view class="quick-action-icon">◉</view>
+        <view class="quick-action-title">今日打卡</view>
+        <view class="quick-action-desc">先完成今天这一笔记录。</view>
+      </view>
+      <view class="quick-action-card home-quick-card" bindtap="handleOpenStats">
+        <view class="quick-action-icon">◔</view>
+        <view class="quick-action-title">统计页</view>
+        <view class="quick-action-desc">查看月历、趋势和累计结果。</view>
+      </view>
+      <view class="quick-action-card home-quick-card" bindtap="handleOpenGroup">
+        <view class="quick-action-icon">◎</view>
+        <view class="quick-action-title">监督群组</view>
+        <view class="quick-action-desc">去看看谁还没有打卡。</view>
+      </view>
+      <view class="quick-action-card home-quick-card" bindtap="handleOpenCommunity">
+        <view class="quick-action-icon">◌</view>
+        <view class="quick-action-title">社区动态</view>
+        <view class="quick-action-desc">查看提醒、打卡和群组变化。</view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{auth || profile}}" class="panel-card">
+    <view class="section-title">账号与资料</view>
     <view class="field-row">
       <text class="field-label">绑定状态</text>
-      <view class="status-chip {{auth.bound ? '' : 'neutral'}}">
+      <view class="status-chip {{auth && auth.bound ? '' : 'neutral'}}">
         {{auth.bound ? '已绑定微信小程序' : '未绑定'}}
       </view>
     </view>
@@ -30,14 +80,6 @@
       <text class="field-label">OpenID</text>
       <text class="field-value">{{auth.openid_masked || '登录后自动生成'}}</text>
     </view>
-    <view class="actions-row">
-      <button class="secondary-button" bindtap="handleOpenProfile">编辑资料</button>
-      <button class="secondary-button" bindtap="handleCopyToken" disabled="{{!sessionToken}}">复制令牌</button>
-    </view>
-  </view>
-
-  <view wx:if="{{profile}}" class="panel-card">
-    <view class="section-title">个人资料</view>
     <view class="field-row">
       <text class="field-label">昵称</text>
       <text class="field-value">{{profile.nickname}}</text>
@@ -54,50 +96,20 @@
       <text class="field-label">每日预算</text>
       <text class="field-value">¥{{profile.daily_budget}}</text>
     </view>
-  </view>
-
-  <view wx:if="{{stats}}" class="panel-card">
-    <view class="section-title">核心统计</view>
-    <view class="stats-grid">
-      <view class="stat-item">
-        <view class="stat-label">连续打卡</view>
-        <view class="stat-value">{{stats.streak_days}}</view>
-      </view>
-      <view class="stat-item">
-        <view class="stat-label">戒酒总天数</view>
-        <view class="stat-value">{{stats.sober_days}}</view>
-      </view>
-      <view class="stat-item">
-        <view class="stat-label">节省金额</view>
-        <view class="stat-value small">¥{{stats.saved_amount}}</view>
-      </view>
+    <view class="actions-row">
+      <button class="secondary-button" bindtap="handleOpenProfile">编辑资料</button>
+      <button class="secondary-button" bindtap="handleCopyToken" disabled="{{!sessionToken}}">复制令牌</button>
     </view>
   </view>
 
-  <view wx:if="{{sessionToken}}" class="panel-card">
-    <view class="section-title">快捷入口</view>
-    <view class="quick-actions">
-      <view class="quick-action-card" bindtap="handleOpenCheckin">
-        <view class="quick-action-title">今日打卡</view>
-        <view class="quick-action-desc">选择心情、写下今天的感悟，直接完成打卡。</view>
-      </view>
-      <view class="quick-action-card" bindtap="handleOpenStats">
-        <view class="quick-action-title">统计页</view>
-        <view class="quick-action-desc">查看连续打卡、月历记录和最近心情趋势。</view>
-      </view>
-      <view class="quick-action-card" bindtap="handleOpenGroup">
-        <view class="quick-action-title">监督群组</view>
-        <view class="quick-action-desc">查看成员状态，催一下还没打卡的人。</view>
-      </view>
-      <view class="quick-action-card" bindtap="handleOpenCommunity">
-        <view class="quick-action-title">社区动态</view>
-        <view class="quick-action-desc">看看大家今天的打卡、提醒和群组变化。</view>
-      </view>
-    </view>
-  </view>
-
-  <view wx:if="{{group}}" class="panel-card">
+  <view wx:if="{{group}}" class="panel-card home-group-card">
     <view class="section-title">当前监督群组</view>
+    <view class="home-group-summary">
+      <view class="home-group-name">{{group.name}}</view>
+      <view class="status-chip {{group.incoming_reminder ? 'warn' : ''}}">
+        {{group.incoming_reminder ? '有人在等你打卡' : '群组在线监督中'}}
+      </view>
+    </view>
     <view class="group-row">
       <text class="group-label">群组名称</text>
       <text class="group-value">{{group.name}}</text>
@@ -116,7 +128,7 @@
     </view>
   </view>
 
-  <view wx:if="{{members.length}}" class="panel-card">
+  <view wx:if="{{members.length}}" class="panel-card home-members-card">
     <view class="section-title">成员进度</view>
     <view class="member-list">
       <view wx:for="{{members}}" wx:key="user_id" class="member-row">
