@@ -116,7 +116,7 @@ Page({
 
   handleOpenGroup() {
     wx.navigateTo({
-      url: "/pages/group/group",
+      url: "/pages/challenge/challenge",
     });
   },
 

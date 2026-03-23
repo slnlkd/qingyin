@@ -25,7 +25,7 @@
     </view>
     <view class="inline-button-row">
       <button class="secondary-button" bindtap="handleRefresh" loading="{{loading}}">刷新数据</button>
-      <button wx:if="{{group}}" class="secondary-button" bindtap="handleOpenGroup">前往群组</button>
+      <button wx:if="{{group}}" class="secondary-button" bindtap="handleOpenGroup">前往挑战</button>
     </view>
   </view>
 
@@ -54,9 +54,9 @@
 
   <view wx:if="{{!group && !loading}}" class="panel-card">
     <view class="section-title">当前监督群组</view>
-    <view class="muted-text">你还没有加入监督群组，可以去群组页创建或输入邀请码加入。</view>
+    <view class="muted-text">你还没有加入监督群组，可以去挑战页创建或输入邀请码加入。</view>
     <view class="actions-row">
-      <button class="secondary-button" bindtap="handleOpenGroup">前往群组页</button>
+      <button class="secondary-button" bindtap="handleOpenGroup">前往挑战页</button>
     </view>
   </view>
 

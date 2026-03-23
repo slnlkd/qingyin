@@ -1,9 +1,10 @@
 {
   "pages": [
     "pages/index/index",
-    "pages/checkin/checkin",
     "pages/stats/stats",
+    "pages/challenge/challenge",
     "pages/group/group",
+    "pages/checkin/checkin",
     "pages/community/community",
     "pages/profile/profile"
   ],

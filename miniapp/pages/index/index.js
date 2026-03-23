@@ -8,10 +8,19 @@ const bindModeLabelMap = {
   claimed_transfer: "已把 Web 端当前账号迁移到微信小程序",
 };
 
+const moods = [
+  { label: "开心", icon: "😊" },
+  { label: "平静", icon: "😌" },
+  { label: "一般", icon: "🙂" },
+  { label: "渴望", icon: "😣" },
+  { label: "不适", icon: "😟" },
+];
+
 Page({
   data: {
     loading: false,
     loggingIn: false,
+    submitting: false,
     error: "",
     bindMessage: "",
     sessionToken: "",
@@ -20,10 +29,24 @@ Page({
     stats: null,
     group: null,
     members: [],
+    todayStatus: null,
+    celebrating: false,
+    successBanner: "",
+    moods,
+    selectedMood: "平静",
+    reflection: "",
   },
 
   onShow() {
     this.bootstrap();
+  },
+
+  onHide() {
+    this.clearCelebrationTimer();
+  },
+
+  onUnload() {
+    this.clearCelebrationTimer();
   },
 
   onPullDownRefresh() {
@@ -42,6 +65,8 @@ Page({
         stats: null,
         group: null,
         members: [],
+        todayStatus: null,
+        reflection: "",
         error: "",
       });
       return;
@@ -50,8 +75,16 @@ Page({
     this.setData({ loading: true, error: "", sessionToken: token });
 
     try {
-      const dashboard = await api.fetchDashboard();
+      const [dashboard, todayStatus] = await Promise.all([
+        api.fetchDashboard(),
+        api.fetchTodayCheckin(),
+      ]);
       this.applyDashboard(dashboard);
+      this.setData({
+        todayStatus,
+        selectedMood: todayStatus.checked_in && todayStatus.entry ? todayStatus.entry.mood : "平静",
+        reflection: todayStatus.checked_in && todayStatus.entry ? todayStatus.entry.reflection || "" : "",
+      });
     } catch (error) {
       const message = error.message || "读取清饮数据失败";
       if (message.includes("无效会话") || message.includes("缺少会话令牌")) {
@@ -63,6 +96,8 @@ Page({
           stats: null,
           group: null,
           members: [],
+          todayStatus: null,
+          reflection: "",
         });
       }
       this.setData({ error: message });
@@ -83,6 +118,28 @@ Page({
       members,
       error: "",
     });
+  },
+
+  clearCelebrationTimer() {
+    if (this.celebrationTimer) {
+      clearTimeout(this.celebrationTimer);
+      this.celebrationTimer = null;
+    }
+  },
+
+  triggerCelebration() {
+    this.clearCelebrationTimer();
+    this.setData({
+      celebrating: true,
+      successBanner: "今天也守住了自己，继续保持清醒。",
+    });
+    this.celebrationTimer = setTimeout(() => {
+      this.setData({
+        celebrating: false,
+        successBanner: "",
+      });
+      this.celebrationTimer = null;
+    }, 2200);
   },
 
   async handleWechatLogin() {
@@ -124,12 +181,6 @@ Page({
     });
   },
 
-  handleOpenCheckin() {
-    wx.navigateTo({
-      url: "/pages/checkin/checkin",
-    });
-  },
-
   handleOpenStats() {
     wx.navigateTo({
       url: "/pages/stats/stats",
@@ -138,7 +189,7 @@ Page({
 
   handleOpenGroup() {
     wx.navigateTo({
-      url: "/pages/group/group",
+      url: "/pages/challenge/challenge",
     });
   },
 
@@ -155,5 +206,42 @@ Page({
     wx.setClipboardData({
       data: this.data.sessionToken,
     });
+  },
+
+  handleMoodSelect(event) {
+    const mood = event.currentTarget.dataset.mood;
+    this.setData({ selectedMood: mood });
+  },
+
+  handleReflectionInput(event) {
+    this.setData({ reflection: event.detail.value });
+  },
+
+  async handleSubmit() {
+    if (this.data.submitting || !this.data.selectedMood) {
+      return;
+    }
+
+    this.setData({ submitting: true, error: "" });
+    try {
+      await api.createCheckin({
+        mood: this.data.selectedMood,
+        reflection: this.data.reflection.trim(),
+      });
+      await this.bootstrap();
+      this.triggerCelebration();
+      wx.showToast({
+        title: "打卡成功",
+        icon: "success",
+      });
+    } catch (error) {
+      this.setData({ error: error.message || "打卡失败" });
+      wx.showToast({
+        title: "打卡失败",
+        icon: "none",
+      });
+    } finally {
+      this.setData({ submitting: false });
+    }
   },
 });

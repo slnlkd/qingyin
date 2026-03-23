@@ -1,7 +1,7 @@
 const NAV_ITEMS = {
   home: "/pages/index/index",
-  checkin: "/pages/checkin/checkin",
   stats: "/pages/stats/stats",
+  challenge: "/pages/challenge/challenge",
   community: "/pages/community/community",
   profile: "/pages/profile/profile",
 };
@@ -17,8 +17,8 @@ Component({
   data: {
     items: [
       { key: "home", icon: "⌂", text: "首页" },
-      { key: "checkin", icon: "◉", text: "打卡" },
       { key: "stats", icon: "◔", text: "统计" },
+      { key: "challenge", icon: "◈", text: "挑战" },
       { key: "community", icon: "◎", text: "社区" },
       { key: "profile", icon: "◡", text: "我的" },
     ],
