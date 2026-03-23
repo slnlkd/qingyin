@@ -13,6 +13,8 @@ Page({
     loading: false,
     submitting: false,
     error: "",
+    celebrating: false,
+    successBanner: "",
     todayStatus: null,
     stats: null,
     profile: null,
@@ -23,6 +25,14 @@ Page({
 
   onShow() {
     this.bootstrap();
+  },
+
+  onHide() {
+    this.clearCelebrationTimer();
+  },
+
+  onUnload() {
+    this.clearCelebrationTimer();
   },
 
   onPullDownRefresh() {
@@ -58,6 +68,28 @@ Page({
     }
   },
 
+  clearCelebrationTimer() {
+    if (this.celebrationTimer) {
+      clearTimeout(this.celebrationTimer);
+      this.celebrationTimer = null;
+    }
+  },
+
+  triggerCelebration() {
+    this.clearCelebrationTimer();
+    this.setData({
+      celebrating: true,
+      successBanner: "今天也守住了自己，继续保持清醒。",
+    });
+    this.celebrationTimer = setTimeout(() => {
+      this.setData({
+        celebrating: false,
+        successBanner: "",
+      });
+      this.celebrationTimer = null;
+    }, 2200);
+  },
+
   handleMoodSelect(event) {
     const mood = event.currentTarget.dataset.mood;
     this.setData({ selectedMood: mood });
@@ -78,11 +110,12 @@ Page({
         mood: this.data.selectedMood,
         reflection: this.data.reflection.trim(),
       });
+      await this.bootstrap();
+      this.triggerCelebration();
       wx.showToast({
         title: "打卡成功",
         icon: "success",
       });
-      await this.bootstrap();
     } catch (error) {
       this.setData({ error: error.message || "打卡失败" });
       wx.showToast({

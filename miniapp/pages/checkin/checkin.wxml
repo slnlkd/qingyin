@@ -1,8 +1,13 @@
 <view class="page-shell">
+  <view wx:if="{{successBanner}}" class="panel-card success-banner {{celebrating ? 'show' : ''}}">
+    <view class="success-banner-title">打卡已完成</view>
+    <view class="success-banner-text">{{successBanner}}</view>
+  </view>
+
   <view class="panel-card checkin-ring-card">
     <view class="section-title">今天也保持清醒</view>
     <view class="checkin-date">{{todayStatus ? todayStatus.date : '正在读取日期...'}}</view>
-    <view class="checkin-ring {{todayStatus && todayStatus.checked_in ? 'done' : ''}}">
+    <view class="checkin-ring {{todayStatus && todayStatus.checked_in ? 'done' : ''}} {{celebrating ? 'celebrating' : ''}}">
       <view class="checkin-ring-inner">
         <view class="checkin-mark">{{todayStatus && todayStatus.checked_in ? '✓' : '○'}}</view>
         <view class="checkin-title">{{todayStatus && todayStatus.checked_in ? '今日已打卡' : '等待打卡'}}</view>
@@ -14,18 +19,18 @@
     <view wx:if="{{error}}" class="error-text">{{error}}</view>
   </view>
 
-  <view wx:if="{{stats}}" class="panel-card">
+  <view wx:if="{{stats}}" class="panel-card {{celebrating ? 'stats-celebrating' : ''}}">
     <view class="section-title">打卡后的变化</view>
     <view class="stats-grid">
-      <view class="stat-item">
+      <view class="stat-item {{celebrating ? 'stat-pop' : ''}}">
         <view class="stat-label">连续打卡</view>
         <view class="stat-value">{{stats.streak_days}}</view>
       </view>
-      <view class="stat-item">
+      <view class="stat-item {{celebrating ? 'stat-pop stat-pop-delay-1' : ''}}">
         <view class="stat-label">累计签到</view>
         <view class="stat-value">{{stats.total_checkins}}</view>
       </view>
-      <view class="stat-item">
+      <view class="stat-item {{celebrating ? 'stat-pop stat-pop-delay-2' : ''}}">
         <view class="stat-label">节省金额</view>
         <view class="stat-value small">¥{{stats.saved_amount}}</view>
       </view>

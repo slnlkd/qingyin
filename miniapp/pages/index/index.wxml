@@ -106,6 +106,10 @@
         <view class="quick-action-title">监督群组</view>
         <view class="quick-action-desc">查看成员状态，催一下还没打卡的人。</view>
       </view>
+      <view class="quick-action-card" bindtap="handleOpenCommunity">
+        <view class="quick-action-title">社区动态</view>
+        <view class="quick-action-desc">看看大家今天的打卡、提醒和群组变化。</view>
+      </view>
     </view>
   </view>
 

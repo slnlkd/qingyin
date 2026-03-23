@@ -1,3 +1,121 @@
 .form-item .muted-text {
   padding: 18rpx 0 0;
 }
+
+.success-banner {
+  margin-bottom: 18rpx;
+  border-color: #bfe8cb;
+  background: linear-gradient(180deg, rgba(246, 255, 249, 0.98) 0%, rgba(233, 249, 238, 0.96) 100%);
+  opacity: 0;
+  transform: translateY(-12rpx);
+}
+
+.success-banner.show {
+  animation: banner-in 0.48s ease forwards;
+}
+
+.success-banner-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #166534;
+}
+
+.success-banner-text {
+  margin-top: 10rpx;
+  font-size: 25rpx;
+  line-height: 1.7;
+  color: #2f5e43;
+}
+
+.checkin-ring.celebrating {
+  animation: ring-glow 1.15s ease-in-out 2;
+}
+
+.checkin-ring.celebrating .checkin-ring-inner {
+  animation: ring-core-bounce 0.7s ease;
+}
+
+.checkin-ring.celebrating .checkin-mark {
+  animation: mark-pop 0.52s ease;
+}
+
+.stat-pop {
+  animation: stat-pop-up 0.68s ease;
+}
+
+.stat-pop-delay-1 {
+  animation-delay: 0.08s;
+}
+
+.stat-pop-delay-2 {
+  animation-delay: 0.16s;
+}
+
+@keyframes banner-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-12rpx);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ring-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 22rpx 46rpx rgba(34, 197, 94, 0.16),
+      0 0 42rpx rgba(103, 208, 148, 0.2),
+      inset 0 0 0 14rpx rgba(255, 255, 255, 0.84);
+  }
+  50% {
+    box-shadow:
+      0 28rpx 64rpx rgba(34, 197, 94, 0.24),
+      0 0 72rpx rgba(103, 208, 148, 0.34),
+      inset 0 0 0 14rpx rgba(255, 255, 255, 0.9);
+  }
+}
+
+@keyframes ring-core-bounce {
+  0% {
+    transform: scale(0.96);
+  }
+  55% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes mark-pop {
+  0% {
+    transform: scale(0.72);
+    opacity: 0.45;
+  }
+  70% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes stat-pop-up {
+  0% {
+    transform: translateY(0) scale(1);
+    box-shadow: none;
+  }
+  45% {
+    transform: translateY(-10rpx) scale(1.03);
+    box-shadow: 0 16rpx 26rpx rgba(34, 197, 94, 0.12);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow: none;
+  }
+}

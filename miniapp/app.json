@@ -3,6 +3,7 @@
     "pages/index/index",
     "pages/checkin/checkin",
     "pages/group/group",
+    "pages/community/community",
     "pages/profile/profile"
   ],
   "window": {

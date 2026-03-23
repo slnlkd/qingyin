@@ -161,6 +161,12 @@ Page({
     });
   },
 
+  handleOpenCommunity() {
+    wx.navigateTo({
+      url: "/pages/community/community",
+    });
+  },
+
   handleCopyToken() {
     if (!this.data.sessionToken) {
       return;

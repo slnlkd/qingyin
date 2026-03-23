@@ -129,6 +129,18 @@ async function fetchCurrentGroup() {
   });
 }
 
+async function fetchGroupFeed() {
+  const token = getToken();
+  if (!token) {
+    throw new Error("当前尚未登录微信小程序");
+  }
+
+  return request({
+    path: "/groups/feed",
+    token,
+  });
+}
+
 async function createGroup(data) {
   const token = getToken();
   if (!token) {
@@ -195,6 +207,7 @@ module.exports = {
   fetchTodayCheckin,
   createCheckin,
   fetchCurrentGroup,
+  fetchGroupFeed,
   createGroup,
   joinGroup,
   remindGroupMember,

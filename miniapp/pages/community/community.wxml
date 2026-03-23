@@ -1,0 +1,34 @@
+<view class="page-shell">
+  <view class="panel-card">
+    <view class="section-title">监督社区</view>
+    <view class="muted-text">这里会显示群组里的打卡、提醒和成员加入动态。下拉可以刷新最新内容。</view>
+  </view>
+
+  <view wx:if="{{error}}" class="panel-card">
+    <view class="error-text">{{error}}</view>
+  </view>
+
+  <view wx:if="{{items.length}}" class="feed-list">
+    <view wx:for="{{items}}" wx:key="created_at" class="panel-card feed-card">
+      <view class="feed-card-top">
+        <view class="member-main">
+          <view class="member-avatar">{{item.avatar_emoji}}</view>
+          <view class="member-text">
+            <view class="member-name">{{item.nickname}}</view>
+            <view class="member-meta">{{item.display_time}}</view>
+          </view>
+        </view>
+        <view class="status-chip">
+          <text>{{item.event_icon}}</text>
+          <text>{{item.event_label}}</text>
+        </view>
+      </view>
+      <view class="feed-card-body">{{item.body_text}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{!items.length && !error && !loading}}" class="panel-card empty-state">
+    <view class="section-title">还没有社区动态</view>
+    <view class="muted-text">当群组成员打卡、加入群组或互相提醒后，这里就会出现对应记录。</view>
+  </view>
+</view>
